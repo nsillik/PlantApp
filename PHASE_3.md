@@ -1,0 +1,137 @@
+# Phase 3 — Camera Plant ID
+
+**Goal:** The hero feature — point the camera at a plant, get species ID + confidence, confirm or override, flow into the existing add-plant path.
+
+**Depends on:** Phase 1 (add-plant flow, catalog, care sheet), Workstream B (CoreML models B1 + B2).
+
+**Back in:** [PLAN.md](PLAN.md)
+
+---
+
+## Workstream B Dependency
+
+This phase cannot start until Workstream B delivers:
+- **B1 — Plant detector model:** A CoreML object-detection model that identifies plant-like shapes in a camera frame (not species-level). Integrated as `.mlmodelc` in the app bundle.
+- **B2 — Species classifier model:** A CoreML image-classification model that identifies houseplant species from a captured image. Integrated as `.mlmodelc` in the app bundle.
+
+If Workstream B is not complete, steps 3.2 and 3.3 are blocked. Steps 3.1, 3.4–3.7 can be developed with mock/stub models in the meantime.
+
+---
+
+## Steps
+
+### 3.1 Camera permission + AVFoundation setup
+- [ ] Add `NSCameraUsageDescription` to Info.plist
+- [ ] Implement camera capture session (`AVCaptureSession`, photo input, video preview)
+- [ ] Camera permission flow: request on first camera use, handle denied state
+- [ ] Camera UI: full-screen preview, shutter button, cancel button
+
+**Acceptance:**
+- Camera preview renders in-app at full frame rate
+- Permission flow works (request → grant → preview; deny → explanatory state with link to settings)
+- Shutter button is visible and tappable
+
+### 3.2 Real-time plant detection (viewfinder)
+*Blocked by Workstream B1.*
+- [ ] Load B1 detector model into a `VNRecognizeObjectsRequest` (or `VNCoreMLRequest`)
+- [ ] Run detection on each camera frame via `VNImageRequestHandler` (on a Vision queue, not main)
+- [ ] Map detected bounding boxes to preview coordinates (accounting for orientation/device)
+- [ ] Render bounding box overlay on the camera preview (SwiftUI overlay or `UIViewRepresentable`)
+- [ ] Throttle if needed to maintain preview framerate
+
+**Acceptance:**
+- Plant shapes are detected in real-time; bounding box appears over them
+- Detection runs at camera framerate without dropping frames or janking the UI
+- No species identification yet — just "plant here"
+- Works in varied lighting (test with indoor conditions)
+
+### 3.3 Species classification (on capture)
+*Blocked by Workstream B2.*
+- [ ] On shutter tap: capture the current frame (`AVCapturePhotoOutput` or frame extraction)
+- [ ] Crop to the detected bounding box (if detection is active) or use full frame
+- [ ] Run B2 classifier model on the captured image (Neural Engine)
+- [ ] Show loading state (detected shape still highlighted, spinner)
+- [ ] Map classifier output to species (match classifier labels to catalog species IDs)
+- [ ] Return top result + confidence score + alternatives
+
+**Acceptance:**
+- Tapping shutter captures and classifies within ~2 seconds on Neural Engine
+- Loading state shows during classification
+- Result includes species name, confidence score (0–1), and top 3 alternatives
+- Handles model failure gracefully (→ fallback to catalog search, step 3.5)
+
+### 3.4 Classification result UI
+- [ ] Result card: species name, confidence bar, "Is this right?" prompt
+- [ ] "Confirm" button → proceeds to add-plant flow (step 3.6)
+- [ ] "Not quite" / "Search catalog" button → catalog search (step 3.5)
+- [ ] Low-confidence state: if confidence < threshold (e.g., 0.6), nudge toward catalog search
+- [ ] Show top alternatives as quick-select chips
+
+**Acceptance:**
+- Result card displays species + confidence clearly
+- Confirm and override paths are obvious
+- Low confidence triggers a gentle nudge to catalog search
+- Alternative species are selectable in one tap
+
+### 3.5 Species override / catalog search
+- [ ] Search interface (reuses catalog search from Phase 1.5)
+- [ ] User searches by common or scientific name
+- [ ] Selecting a species proceeds to add-plant flow (step 3.6)
+- [ ] "Back to camera" option to re-capture
+
+**Acceptance:**
+- User can search and select the correct species from the full catalog
+- Flow connects to the existing add-plant path (no duplicate code)
+- Re-capture returns to camera preview
+
+### 3.6 Integration with add-plant flow
+- [ ] Confirmed/selected species → placement fields (Phase 1.6) → save → care sheet (Phase 1.9–1.10)
+- [ ] No new add-plant code path — reuses Phase 1 flow with species pre-filled
+- [ ] After save, navigate to plant detail (not back to camera)
+
+**Acceptance:**
+- Camera-identified plant flows through the same placement → save → care sheet path as catalog-added plants
+- No duplicated add-plant logic
+- User lands on plant detail after saving
+
+### 3.7 Error handling + edge cases
+- [ ] Model not available (not in bundle / failed to load) → camera screen shows "ID unavailable, search catalog instead"
+- [ ] Classification fails (model error) → graceful message + catalog search fallback
+- [ ] Camera error (hardware unavailable) → message + cancel
+- [ ] No plant detected in frame (detector finds nothing) → "Point at a plant" hint, no bounding box
+- [ ] Multiple plants in frame → detect all, use the largest/most-central for classification
+
+**Acceptance:**
+- Every error path has a clear user message and a path forward
+- User is never stuck with a blank screen or unhandled error
+- Catalog search is always available as a fallback
+
+### 3.8 Workstream B integration verification
+- [ ] B1 detector model compiled to `.mlmodelc` and added to app bundle
+- [ ] B2 classifier model compiled to `.mlmodelc` and added to app bundle
+- [ ] Both models load without errors at runtime
+- [ ] Both run on Neural Engine (not CPU) — verify via Instruments or timing
+- [ ] Model labels map correctly to catalog species IDs (document the mapping)
+
+**Acceptance:**
+- Both models are bundled and load successfully
+- Detection runs at camera framerate (B1)
+- Classification completes in ~1–2 seconds (B2)
+- Model output maps to real catalog entries (no orphaned species IDs)
+
+---
+
+## Phase 3 Exit Criteria
+
+- [ ] Camera preview shows live viewfinder with plant detection bounding box at camera framerate
+- [ ] Tapping shutter captures and classifies within ~2 seconds on Neural Engine
+- [ ] Result shows species name + confidence bar + alternatives
+- [ ] User can confirm species or override via catalog search
+- [ ] Confirmed species flows into existing add-plant → placement → care sheet path
+- [ ] Works fully offline (no network for ID)
+- [ ] Graceful fallback to catalog search when models fail or are unavailable
+- [ ] Both CoreML models (B1, B2) are bundled, load, and run on Neural Engine
+- [ ] Snapshot tests pass for: result card (success, low confidence, error), camera permission denied state
+- [ ] All user-facing strings localized (EN + ES)
+
+→ **MVP candidate B (full):** This is the portfolio centerpiece.
