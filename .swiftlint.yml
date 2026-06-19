@@ -1,0 +1,21 @@
+included:
+  - app/Sources
+  - app/Tests
+
+excluded:
+  - app/.build
+
+line_length:
+  warning: 140
+  error: 200
+
+identifier_name:
+  min_length: 2
+  max_length: 60
+
+type_name:
+  min_length: 2
+  max_length: 60
+
+nesting:
+  type_level: 2

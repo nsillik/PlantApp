@@ -7,14 +7,15 @@ Verdigris is an iOS app that helps people care for their houseplants: identify p
 - **Language:** Swift 6
 - **Platform:** iOS 26.0+
 - **UI:** SwiftUI with `@Observable` ViewModels (MVVM)
-- **Persistence:** Core Data + CloudKit (`NSPersistentCloudKitContainer`)
+- **Persistence:** Core Data + CloudKit (`NSPersistentCloudKitContainer`), domain structs mapped from `NSManagedObject` in Repository layer
 - **Dependency Injection:** PointFree `swift-dependencies` (`@Dependency`)
 - **AI/ML:** Vision, CoreML, NaturalLanguage (on-device); optional OpenAI-compatible API
-- **Testing:** XCTest / Swift Testing, PointFree `SnapshotTesting`
+- **Testing:** Swift Testing (`@Suite`/`@Test`), PointFree `SnapshotTesting`
 - **Linting:** SwiftLint
 - **CI:** GitHub Actions
 - **Project generation:** Tuist (via mise)
 - **Tool versioning:** mise
+- **Developer team:** T9G4KUKSVP
 
 ## Architecture
 
@@ -51,13 +52,26 @@ tuist build
 tuist test
 ```
 
-Unit tests use XCTest / Swift Testing. Snapshot tests use `SnapshotTesting`. ViewModels are tested with mock services via `withDependencies { ... }`.
+Unit tests use Swift Testing (`@Suite`/`@Test`). Snapshot tests use `SnapshotTesting`. ViewModels are tested with mock services via `withDependencies { ... }`.
 
 ## How to Verify (Lint)
 
 ```sh
 swiftlint lint
 ```
+
+## How to Commit and Create a Pull Request
+
+```sh
+git add -A
+git commit -m "feat(app): <description>"
+git push
+gh pr create --fill
+```
+
+- Use conventional commits with the `feat(app)` scope for all Phase 0 work.
+- `gh pr create --fill` auto-populates title and body from the commit message and diff.
+- Ensure PHASE_N.md, PLAN.md, and AGENTS.md are kept in sync before committing.
 
 ## Documentation as Source of Truth
 
@@ -80,7 +94,12 @@ This project maintains several living documents. **All of them must stay in sync
 
 ## Key Conventions
 
-- No comments in code unless explicitly requested.
+- No inline comments in code. Doc comments (`///`) are only written on the following:
+  - **ViewModels** — class purpose, property meanings, method contracts.
+  - **Protocols** — purpose, method semantics (e.g. upsert vs. insert, thread-safety guarantees).
+  - **Domain models** — field meanings and units where non-obvious.
+  - **Protocol implementations** (actors, etc.) — a one-line summary is fine.
+  - **Views** are **not** documented with doc comments; their structure should be self-evident from the SwiftUI body.
 - Follow existing SwiftUI + `@Observable` patterns; do not introduce Combine or UIKit unless the plan calls for it.
 - Use `@Dependency` for all service injection — never instantiate services directly in ViewModels.
 - Pure logic (care-sheet merge, scheduling engine, season matrix) belongs in standalone, testable functions — not in ViewModels.

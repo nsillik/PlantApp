@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Xcode 16.0" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="UserProfileEntity" representedClassName="UserProfileEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="city" optional="YES" attributeType="String"/>
+        <attribute name="latitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="longitude" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="climateClassification" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="PlantSpeciesEntity" representedClassName="PlantSpeciesEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="commonName" optional="YES" attributeType="String"/>
+        <attribute name="scientificName" optional="YES" attributeType="String"/>
+        <attribute name="lightNeeds" optional="YES" attributeType="String"/>
+        <attribute name="wateringInterval" attributeType="Integer 32" defaultValueString="7" usesScalarValueType="YES"/>
+        <attribute name="soilType" optional="YES" attributeType="String"/>
+        <attribute name="humidityRange" optional="YES" attributeType="String"/>
+        <attribute name="toxicity" optional="YES" attributeType="String"/>
+        <attribute name="growthHabit" optional="YES" attributeType="String"/>
+        <attribute name="commonIssues" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+        <attribute name="imageURLs" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData"/>
+    </entity>
+    <entity name="PlantEntity" representedClassName="PlantEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="dateAdded" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="speciesID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="placementLight" optional="YES" attributeType="String"/>
+        <attribute name="placementHumidity" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="CareEventEntity" representedClassName="CareEventEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="plantID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="eventType" optional="YES" attributeType="String"/>
+        <attribute name="timestamp" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="photoData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+    </entity>
+    <entity name="CareScheduleEntity" representedClassName="CareScheduleEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="plantID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastWatered" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastFertilized" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastPruned" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastRepotted" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="adherenceOffset" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+    </entity>
+    <entity name="JournalEntryEntity" representedClassName="JournalEntryEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="plantID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="healthScore" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="leafCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="height" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="photoData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+    </entity>
+    <entity name="EnvironmentalReadingEntity" representedClassName="EnvironmentalReadingEntity" syncable="YES">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="temperature" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="humidity" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="daylightHours" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+    </entity>
+</model>
