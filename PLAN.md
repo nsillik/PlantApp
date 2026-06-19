@@ -54,14 +54,14 @@ These run alongside the phased work. They gate specific phases but don't block e
 - Workstream B approach decided; model work started
 
 **Acceptance criteria:**
-- [ ] App builds and runs on iOS 26 simulator
-- [ ] CI pipeline is green on push (build + test + lint)
-- [ ] Core Data store loads; CRUD works through `PlantRepository`
-- [ ] `@Dependency` injection works; mock injection verified in a test
-- [ ] One snapshot test passes
-- [ ] SwiftLint passes with no errors
-- [ ] Catalog JSON schema is defined and documented
-- [ ] CoreML model approach (train/source/convert) is documented
+- [x] App builds and runs on iOS 26 simulator (`tuist build`)
+- [x] CI pipeline is green on push (build + test + lint)
+- [x] Core Data store loads; CRUD works through `PlantRepository`
+- [x] `@Dependency` injection works; mock injection verified in a test
+- [x] One snapshot test passes
+- [x] SwiftLint passes with no errors
+- [x] Catalog JSON schema is defined and documented
+- [x] CoreML model approach (train/source/convert) is documented
 
 ---
 

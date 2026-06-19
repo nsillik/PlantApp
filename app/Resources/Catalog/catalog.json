@@ -1,0 +1,257 @@
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "commonName": "Monstera",
+    "scientificName": "Monstera deliciosa",
+    "lightNeeds": "bright indirect",
+    "wateringInterval": 7,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "medium-high",
+    "toxicity": "moderate",
+    "growthHabit": "climbing",
+    "commonIssues": ["yellow leaves", "brown edges", "root rot"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Monstera",
+      "es": "Monstera"
+    }
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "commonName": "Snake Plant",
+    "scientificName": "Dracaena trifasciata",
+    "lightNeeds": "low",
+    "wateringInterval": 14,
+    "soilType": "Cactus mix",
+    "humidityRange": "low",
+    "toxicity": "mild",
+    "growthHabit": "upright",
+    "commonIssues": ["overwatering", "root rot", "brown tips"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Snake Plant",
+      "es": "Lengua de suegra"
+    }
+  },
+  {
+    "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "commonName": "Pothos",
+    "scientificName": "Epipremnum aureum",
+    "lightNeeds": "low",
+    "wateringInterval": 7,
+    "soilType": "All-purpose potting mix",
+    "humidityRange": "medium",
+    "toxicity": "moderate",
+    "growthHabit": "trailing",
+    "commonIssues": ["yellow leaves", "root rot", "pests"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Pothos",
+      "es": "Potus"
+    }
+  },
+  {
+    "id": "d4e5f6a7-b8c9-0123-defa-234567890123",
+    "commonName": "Fiddle Leaf Fig",
+    "scientificName": "Ficus lyrata",
+    "lightNeeds": "bright indirect",
+    "wateringInterval": 7,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "medium-high",
+    "toxicity": "mild",
+    "growthHabit": "upright",
+    "commonIssues": ["brown spots", "dropping leaves", "root rot"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Fiddle Leaf Fig",
+      "es": "Higo de hoja de violín"
+    }
+  },
+  {
+    "id": "e5f6a7b8-c9d0-1234-efab-345678901234",
+    "commonName": "Peace Lily",
+    "scientificName": "Spathiphyllum wallisii",
+    "lightNeeds": "low",
+    "wateringInterval": 7,
+    "soilType": "All-purpose potting mix",
+    "humidityRange": "medium-high",
+    "toxicity": "moderate",
+    "growthHabit": "upright",
+    "commonIssues": ["drooping", "brown tips", "yellow leaves"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Peace Lily",
+      "es": "Lirio de paz"
+    }
+  },
+  {
+    "id": "f6a7b8c9-d0e1-2345-fabc-456789012345",
+    "commonName": "Spider Plant",
+    "scientificName": "Chlorophytum comosum",
+    "lightNeeds": "medium",
+    "wateringInterval": 7,
+    "soilType": "All-purpose potting mix",
+    "humidityRange": "medium",
+    "toxicity": "non-toxic",
+    "growthHabit": "rosette",
+    "commonIssues": ["brown tips", "pests"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Spider Plant",
+      "es": "Cinta"
+    }
+  },
+  {
+    "id": "a7b8c9d0-e1f2-3456-abcd-567890123456",
+    "commonName": "ZZ Plant",
+    "scientificName": "Zamioculcas zamiifolia",
+    "lightNeeds": "low",
+    "wateringInterval": 21,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "low",
+    "toxicity": "mild",
+    "growthHabit": "upright",
+    "commonIssues": ["yellow leaves", "root rot"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "ZZ Plant",
+      "es": "Planta ZZ"
+    }
+  },
+  {
+    "id": "b8c9d0e1-f2a3-4567-bcde-678901234567",
+    "commonName": "English Ivy",
+    "scientificName": "Hedera helix",
+    "lightNeeds": "medium",
+    "wateringInterval": 7,
+    "soilType": "All-purpose potting mix",
+    "humidityRange": "medium",
+    "toxicity": "severe",
+    "growthHabit": "trailing",
+    "commonIssues": ["spider mites", "yellow leaves", "leaf drop"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "English Ivy",
+      "es": "Hiedra inglesa"
+    }
+  },
+  {
+    "id": "c9d0e1f2-a3b4-5678-cdef-789012345678",
+    "commonName": "Aloe Vera",
+    "scientificName": "Aloe barbadensis miller",
+    "lightNeeds": "bright indirect",
+    "wateringInterval": 14,
+    "soilType": "Cactus mix",
+    "humidityRange": "low",
+    "toxicity": "mild",
+    "growthHabit": "rosette",
+    "commonIssues": ["overwatering", "brown tips", "sunburn"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Aloe Vera",
+      "es": "Aloe vera"
+    }
+  },
+  {
+    "id": "d0e1f2a3-b4c5-6789-defa-890123456789",
+    "commonName": "Boston Fern",
+    "scientificName": "Nephrolepis exaltata",
+    "lightNeeds": "medium",
+    "wateringInterval": 3,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "high",
+    "toxicity": "non-toxic",
+    "growthHabit": "rosette",
+    "commonIssues": ["brown fronds", "leaf drop", "pests"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Boston Fern",
+      "es": "Helecho de Boston"
+    }
+  },
+  {
+    "id": "e1f2a3b4-c5d6-7890-efab-901234567890",
+    "commonName": "Rubber Plant",
+    "scientificName": "Ficus elastica",
+    "lightNeeds": "bright indirect",
+    "wateringInterval": 7,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "medium",
+    "toxicity": "mild",
+    "growthHabit": "upright",
+    "commonIssues": ["dropping leaves", "brown spots", "overwatering"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Rubber Plant",
+      "es": "Planta del caucho"
+    }
+  },
+  {
+    "id": "f2a3b4c5-d6e7-8901-fabc-012345678901",
+    "commonName": "Calathea",
+    "scientificName": "Calathea orbifolia",
+    "lightNeeds": "medium low",
+    "wateringInterval": 7,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "high",
+    "toxicity": "non-toxic",
+    "growthHabit": "upright",
+    "commonIssues": ["brown edges", "curling leaves", "pests"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Calathea",
+      "es": "Calatea"
+    }
+  },
+  {
+    "id": "a3b4c5d6-e7f8-9012-abcd-123456789abc",
+    "commonName": "Philodendron",
+    "scientificName": "Philodendron hederaceum",
+    "lightNeeds": "medium",
+    "wateringInterval": 7,
+    "soilType": "All-purpose potting mix",
+    "humidityRange": "medium",
+    "toxicity": "moderate",
+    "growthHabit": "trailing",
+    "commonIssues": ["yellow leaves", "leggy growth", "root rot"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Philodendron",
+      "es": "Filodendro"
+    }
+  },
+  {
+    "id": "b4c5d6e7-f8a9-0123-bcde-234567890bcd",
+    "commonName": "Chinese Evergreen",
+    "scientificName": "Aglaonema commutatum",
+    "lightNeeds": "low",
+    "wateringInterval": 7,
+    "soilType": "All-purpose potting mix",
+    "humidityRange": "medium",
+    "toxicity": "moderate",
+    "growthHabit": "upright",
+    "commonIssues": ["yellow leaves", "brown tips", "root rot"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Chinese Evergreen",
+      "es": "Aglaonema"
+    }
+  },
+  {
+    "id": "c5d6e7f8-a9b0-1234-cdef-345678901def",
+    "commonName": "Bird of Paradise",
+    "scientificName": "Strelitzia reginae",
+    "lightNeeds": "bright indirect",
+    "wateringInterval": 7,
+    "soilType": "Well-draining potting mix",
+    "humidityRange": "medium",
+    "toxicity": "mild",
+    "growthHabit": "upright",
+    "commonIssues": ["brown edges", "splitting leaves", "pests"],
+    "imageURLs": [],
+    "commonNamesLocalized": {
+      "en": "Bird of Paradise",
+      "es": "Ave del paraíso"
+    }
+  }
+]
