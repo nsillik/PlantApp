@@ -31,6 +31,16 @@ extension DependencyValues {
         get { self[ClimateServiceKey.self] }
         set { self[ClimateServiceKey.self] = newValue }
     }
+
+    var careScheduleRepository: CareScheduleRepository {
+        get { self[CareScheduleRepositoryKey.self] }
+        set { self[CareScheduleRepositoryKey.self] = newValue }
+    }
+
+    var careEventRepository: CareEventRepository {
+        get { self[CareEventRepositoryKey.self] }
+        set { self[CareEventRepositoryKey.self] = newValue }
+    }
 }
 
 private enum PersistenceServiceKey: DependencyKey {
@@ -97,6 +107,22 @@ private enum UserProfileRepositoryKey: DependencyKey {
     static let testValue: UserProfileRepository = UnimplementedUserProfileRepository()
 }
 
+private enum CareScheduleRepositoryKey: DependencyKey {
+    static let liveValue: CareScheduleRepository = CoreDataCareScheduleRepository(
+        persistenceService: PersistenceController.shared
+    )
+
+    static let testValue: CareScheduleRepository = UnimplementedCareScheduleRepository()
+}
+
+private enum CareEventRepositoryKey: DependencyKey {
+    static let liveValue: CareEventRepository = CoreDataCareEventRepository(
+        persistenceService: PersistenceController.shared
+    )
+
+    static let testValue: CareEventRepository = UnimplementedCareEventRepository()
+}
+
 private struct UnimplementedPlantRepository: PlantRepository {
     func fetchAll() async throws -> [Plant] {
         reportIssue("Unimplemented")
@@ -124,6 +150,38 @@ private struct UnimplementedUserProfileRepository: UserProfileRepository {
     }
 
     func save(_ profile: UserProfile) async throws {
+        reportIssue("Unimplemented")
+    }
+}
+
+private struct UnimplementedCareScheduleRepository: CareScheduleRepository {
+    func fetch(plantID: UUID) async throws -> CareSchedule? {
+        reportIssue("Unimplemented")
+        return nil
+    }
+
+    func fetchAll() async throws -> [CareSchedule] {
+        reportIssue("Unimplemented")
+        return []
+    }
+
+    func save(_ schedule: CareSchedule) async throws {
+        reportIssue("Unimplemented")
+    }
+}
+
+private struct UnimplementedCareEventRepository: CareEventRepository {
+    func fetch(plantID: UUID) async throws -> [CareEvent] {
+        reportIssue("Unimplemented")
+        return []
+    }
+
+    func fetchAll() async throws -> [CareEvent] {
+        reportIssue("Unimplemented")
+        return []
+    }
+
+    func save(_ event: CareEvent) async throws {
         reportIssue("Unimplemented")
     }
 }

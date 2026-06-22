@@ -113,16 +113,17 @@ These run alongside the phased work. They gate specific phases but don't block e
 - Photo attachment for care events (PhotosPicker/camera, compressed JPEG, external binary storage)
 
 **Acceptance criteria:**
-- [ ] Scheduling engine produces correct next-due dates from all adjustment factors (season, placement, adherence)
-- [ ] User can log care events (water/fertilize/prune/repot) from dashboard and plant detail
-- [ ] Dashboard shows correct due and upcoming tasks across all plants
-- [ ] Notifications fire at correct times; 64-cap prioritization strategy works at scale (tested with 20+ plants)
-- [ ] Notifications re-register on app launch and after schedule changes
-- [ ] Care event history shows logged events chronologically per plant
-- [ ] User can attach a photo to a care event; photo persists and syncs via CloudKit
-- [ ] Scheduling engine has comprehensive unit tests
-- [ ] Snapshot tests pass for dashboard, care event history
-- [ ] All user-facing strings localized (EN + ES)
+- [x] Scheduling engine produces correct next-due dates from all adjustment factors (season, placement, adherence)
+- [x] User can log care events (water/fertilize/prune/repot) from dashboard and plant detail
+- [x] Dashboard shows correct due and upcoming tasks across all plants
+- [x] Notifications fire at correct times; 64-cap prioritization strategy works at scale (tested with 20+ plants)
+- [x] Notifications re-register on app launch and after schedule changes
+- [x] 64-cap strategy: register the 60 soonest tasks globally across all plants and care types (global top-60), ignoring per-plant fairness. On fire, re-register the next soonest.
+- [x] Care event history shows logged events chronologically per plant
+- [x] User can attach a photo to a care event; photo persists and syncs via CloudKit
+- [x] Scheduling engine has comprehensive unit tests
+- [x] Snapshot tests pass for dashboard, care event history
+- [x] All user-facing strings localized (EN + ES)
 
 → **MVP candidate A (lean):** If Phase 3 slips due to CoreML, the app is already a useful product here.
 

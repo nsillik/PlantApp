@@ -98,6 +98,9 @@ struct PlantSpecies: Identifiable, Sendable, Codable {
     var scientificName: String?
     var lightNeeds: String?
     var wateringInterval: Int
+    var fertilizingInterval: Int
+    var pruningInterval: Int
+    var repottingInterval: Int
     var soilType: String?
     var humidityRange: String?
     var toxicity: String?
@@ -111,6 +114,9 @@ struct PlantSpecies: Identifiable, Sendable, Codable {
         scientificName: String? = nil,
         lightNeeds: String? = nil,
         wateringInterval: Int,
+        fertilizingInterval: Int = 30,
+        pruningInterval: Int = 90,
+        repottingInterval: Int = 365,
         soilType: String? = nil,
         humidityRange: String? = nil,
         toxicity: String? = nil,
@@ -123,6 +129,9 @@ struct PlantSpecies: Identifiable, Sendable, Codable {
         self.scientificName = scientificName
         self.lightNeeds = lightNeeds
         self.wateringInterval = wateringInterval
+        self.fertilizingInterval = fertilizingInterval
+        self.pruningInterval = pruningInterval
+        self.repottingInterval = repottingInterval
         self.soilType = soilType
         self.humidityRange = humidityRange
         self.toxicity = toxicity
@@ -138,6 +147,9 @@ struct PlantSpecies: Identifiable, Sendable, Codable {
         scientificName = try container.decodeIfPresent(String.self, forKey: .scientificName)
         lightNeeds = try container.decodeIfPresent(String.self, forKey: .lightNeeds)
         wateringInterval = try container.decode(Int.self, forKey: .wateringInterval)
+        fertilizingInterval = try container.decodeIfPresent(Int.self, forKey: .fertilizingInterval) ?? 30
+        pruningInterval = try container.decodeIfPresent(Int.self, forKey: .pruningInterval) ?? 90
+        repottingInterval = try container.decodeIfPresent(Int.self, forKey: .repottingInterval) ?? 365
         soilType = try container.decodeIfPresent(String.self, forKey: .soilType)
         humidityRange = try container.decodeIfPresent(String.self, forKey: .humidityRange)
         toxicity = try container.decodeIfPresent(String.self, forKey: .toxicity)
@@ -147,7 +159,7 @@ struct PlantSpecies: Identifiable, Sendable, Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, scientificName, lightNeeds, wateringInterval, soilType, humidityRange, toxicity, growthHabit, commonIssues, imageURLs
+        case id, scientificName, lightNeeds, wateringInterval, fertilizingInterval, pruningInterval, repottingInterval, soilType, humidityRange, toxicity, growthHabit, commonIssues, imageURLs
     }
 }
 
@@ -255,6 +267,21 @@ struct City: Equatable, Hashable, Sendable, Codable {
     var region: String
     var latitude: Double
     var longitude: Double
+}
+
+/// A scheduled care task produced by the scheduling engine.
+struct CareTask: Identifiable, Sendable, Equatable {
+    let id: UUID
+    /// The plant this task is for.
+    var plantID: UUID
+    /// Display name of the plant.
+    var plantName: String
+    /// The type of care to perform.
+    var eventType: CareEventType
+    /// When this task is due.
+    var dueDate: Date
+    /// Whether the due date has passed.
+    var isOverdue: Bool
 }
 
 /// An environmental data point, sourced from device sensors or weather APIs.

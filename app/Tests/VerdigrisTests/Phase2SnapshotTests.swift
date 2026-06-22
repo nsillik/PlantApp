@@ -1,0 +1,93 @@
+import Dependencies
+import SnapshotTesting
+import SwiftUI
+import Testing
+
+@testable import Verdigris
+
+@MainActor
+@Suite("Phase 2 Snapshot Tests")
+struct Phase2SnapshotTests {
+    @Test("Dashboard with today and upcoming tasks")
+    func dashboardWithTasks() {
+        let plant = Plant(
+            id: UUID(), name: "Monstera", dateAdded: Date(),
+            speciesID: UUID(), placementLight: .indirect, placementHumidity: .normal
+        )
+        let now = Date()
+        let todayEnd = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now))!
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now)!
+
+        let coordinator = OnboardingCoordinator()
+        let viewModel = HomeViewModel()
+
+        viewModel.plants = [plant]
+        viewModel.careTasks = [
+            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .watered, dueDate: now, isOverdue: true),
+            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .fertilized, dueDate: todayEnd, isOverdue: false),
+            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .pruned, dueDate: tomorrow, isOverdue: false),
+        ]
+
+        let view = HomeView(viewModel: viewModel, onboardingCoordinator: coordinator)
+        let hostingController = UIHostingController(rootView: view)
+
+        withDependencies {
+            $0.plantRepository = MockSnapshotPlantRepository()
+            $0.catalogService = MockSnapshotCatalogService()
+            $0.careScheduleRepository = MockSnapshotScheduleRepository()
+            $0.careEventRepository = MockSnapshotEventRepository()
+            $0.userProfileRepository = MockSnapshotProfileRepository()
+        } operation: {
+            withSnapshotTesting(record: SnapshotRecord.mode) {
+                assertSnapshot(of: hostingController, as: .image(on: .iPhone13Pro))
+            }
+        }
+    }
+
+    @Test("Care event history renders")
+    func careEventHistory() {
+        let plantID = UUID()
+        let events = [
+            CareEvent(id: UUID(), plantID: plantID, eventType: .watered, timestamp: Date(), photoData: nil),
+            CareEvent(id: UUID(), plantID: plantID, eventType: .fertilized, timestamp: Calendar.current.date(byAdding: .day, value: -7, to: Date())!, photoData: nil),
+            CareEvent(id: UUID(), plantID: plantID, eventType: .pruned, timestamp: Calendar.current.date(byAdding: .day, value: -14, to: Date())!, photoData: nil),
+            CareEvent(id: UUID(), plantID: plantID, eventType: .repotted, timestamp: Calendar.current.date(byAdding: .day, value: -30, to: Date())!, photoData: nil),
+        ]
+
+        let view = CareEventHistoryView(events: events)
+        let controller = UIHostingController(rootView: view)
+        controller.view.frame = CGRect(x: 0, y: 0, width: 390, height: 200)
+
+        withSnapshotTesting(record: SnapshotRecord.mode) {
+            assertSnapshot(of: controller, as: .image)
+        }
+    }
+}
+
+private struct MockSnapshotPlantRepository: PlantRepository {
+    func fetchAll() async throws -> [Plant] { [] }
+    func fetch(id: UUID) async throws -> Plant? { nil }
+    func save(_ plant: Plant) async throws {}
+    func delete(_ plant: Plant) async throws {}
+}
+
+private struct MockSnapshotCatalogService: CatalogService {
+    func loadCatalog() async throws -> [PlantSpecies] { [] }
+}
+
+private struct MockSnapshotScheduleRepository: CareScheduleRepository {
+    func fetch(plantID: UUID) async throws -> CareSchedule? { nil }
+    func fetchAll() async throws -> [CareSchedule] { [] }
+    func save(_ schedule: CareSchedule) async throws {}
+}
+
+private struct MockSnapshotEventRepository: CareEventRepository {
+    func fetch(plantID: UUID) async throws -> [CareEvent] { [] }
+    func fetchAll() async throws -> [CareEvent] { [] }
+    func save(_ event: CareEvent) async throws {}
+}
+
+private struct MockSnapshotProfileRepository: UserProfileRepository {
+    func fetch() async throws -> UserProfile? { nil }
+    func save(_ profile: UserProfile) async throws {}
+}

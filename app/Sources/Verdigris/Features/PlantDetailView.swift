@@ -1,4 +1,5 @@
 import Dependencies
+import PhotosUI
 import SwiftUI
 
 @MainActor
@@ -8,6 +9,11 @@ final class PlantDetailViewModel {
     var catalogSpecies: PlantSpecies?
     var userProfile: UserProfile?
     var careSheet: CareSheet?
+    var careEvents: [CareEvent] = []
+    var isLoadingEvents = false
+    var showPhotoPicker = false
+    var selectedPhotoItem: PhotosPickerItem?
+    var pendingPhotoData: Data?
 
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
@@ -15,6 +21,10 @@ final class PlantDetailViewModel {
     @Dependency(\.userProfileRepository) private var profileRepository
     @ObservationIgnored
     @Dependency(\.catalogService) private var catalogService
+    @ObservationIgnored
+    @Dependency(\.careEventRepository) private var eventRepository
+    @ObservationIgnored
+    @Dependency(\.careScheduleRepository) private var scheduleRepository
 
     var editableName: String {
         get { plant.name }
@@ -27,9 +37,13 @@ final class PlantDetailViewModel {
 
     func loadData() async {
         do {
-            let allSpecies = try await catalogService.loadCatalog()
-            catalogSpecies = allSpecies.first { $0.id == plant.speciesID }
-            userProfile = try await profileRepository.fetch()
+            async let allSpecies = catalogService.loadCatalog()
+            async let profile = profileRepository.fetch()
+            async let events = eventRepository.fetch(plantID: plant.id)
+
+            catalogSpecies = try await allSpecies.first { $0.id == plant.speciesID }
+            userProfile = try await profile
+            careEvents = try await events
             regenerateCareSheet()
         } catch {
             reportIssue("""
@@ -83,6 +97,69 @@ final class PlantDetailViewModel {
         }
     }
 
+    func logCareEvent(eventType: CareEventType) async {
+        let photoData = pendingPhotoData
+        pendingPhotoData = nil
+        selectedPhotoItem = nil
+
+        let event = CareEvent(
+            id: UUID(),
+            plantID: plant.id,
+            eventType: eventType,
+            timestamp: Date(),
+            photoData: photoData
+        )
+
+        do {
+            try await eventRepository.save(event)
+            careEvents.insert(event, at: 0)
+
+            let schedule = try await scheduleRepository.fetch(plantID: plant.id)
+            var updated = schedule ?? CareSchedule(
+                id: UUID(),
+                plantID: plant.id,
+                lastWatered: nil,
+                lastFertilized: nil,
+                lastPruned: nil,
+                lastRepotted: nil,
+                adherenceOffset: 0
+            )
+
+            switch eventType {
+            case .watered:
+                updated.lastWatered = Date()
+            case .fertilized:
+                updated.lastFertilized = Date()
+            case .pruned:
+                updated.lastPruned = Date()
+            case .repotted:
+                updated.lastRepotted = Date()
+            }
+
+            try await scheduleRepository.save(updated)
+        } catch {
+            reportIssue("Failed to log care event: \(error)")
+        }
+    }
+
+    func loadPhoto(from item: PhotosPickerItem) async {
+        guard let data = try? await item.loadTransferable(type: Data.self) else { return }
+        let compressed = compressImage(data, targetSizeKB: 500)
+        pendingPhotoData = compressed
+    }
+
+    private func compressImage(_ data: Data, targetSizeKB: Int) -> Data {
+        guard let image = UIImage(data: data) else { return data }
+        let targetBytes = targetSizeKB * 1024
+        var compression: CGFloat = 0.8
+        var compressed = image.jpegData(compressionQuality: compression) ?? data
+        while compressed.count > targetBytes && compression > 0.1 {
+            compression -= 0.1
+            compressed = image.jpegData(compressionQuality: compression) ?? data
+        }
+        return compressed
+    }
+
     private func regenerateCareSheet() {
         guard let species = catalogSpecies, let profile = userProfile,
               let light = plant.placementLight, let humidity = plant.placementHumidity else {
@@ -132,6 +209,45 @@ struct PlantDetailView: View {
 
                 Divider()
 
+                Text(String(localized: "Care Actions"))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    CareActionButton(title: String(localized: "Watered"), icon: "drop.fill", color: .blue) {
+                        Task { await viewModel.logCareEvent(eventType: .watered) }
+                    }
+                    CareActionButton(title: String(localized: "Fertilized"), icon: "leaf.arrow.circlepath", color: .green) {
+                        Task { await viewModel.logCareEvent(eventType: .fertilized) }
+                    }
+                    CareActionButton(title: String(localized: "Pruned"), icon: "scissors", color: .orange) {
+                        Task { await viewModel.logCareEvent(eventType: .pruned) }
+                    }
+                    CareActionButton(title: String(localized: "Repotted"), icon: "tray.full", color: .brown) {
+                        Task { await viewModel.logCareEvent(eventType: .repotted) }
+                    }
+                }
+
+                if viewModel.selectedPhotoItem != nil || viewModel.pendingPhotoData != nil {
+                    Text(String(localized: "Photo attached"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                PhotosPicker(selection: Binding(
+                    get: { viewModel.selectedPhotoItem },
+                    set: { item in
+                        viewModel.selectedPhotoItem = item
+                        if let item {
+                            Task { await viewModel.loadPhoto(from: item) }
+                        }
+                    }
+                ), matching: .images) {
+                    Label(String(localized: "Attach Photo"), systemImage: "camera")
+                }
+
+                Divider()
+
                 Text(String(localized: "Placement"))
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -177,11 +293,44 @@ struct PlantDetailView: View {
                         description: Text(String(localized: "Generating your care guide."))
                     )
                 }
+
+                if !viewModel.careEvents.isEmpty {
+                    Divider()
+
+                    Text(String(localized: "Care History"))
+                        .font(.title2)
+                        .fontWeight(.semibold)
+
+                    CareEventHistoryView(events: viewModel.careEvents)
+                }
             }
             .padding()
         }
         .task {
             await viewModel.loadData()
         }
+    }
+}
+
+private struct CareActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                Text(title)
+                    .font(.caption)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(color.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
     }
 }
