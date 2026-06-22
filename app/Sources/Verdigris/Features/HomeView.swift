@@ -1,6 +1,5 @@
 import Dependencies
 import SwiftUI
-import UserNotifications
 
 @MainActor
 @Observable
@@ -24,8 +23,9 @@ final class HomeViewModel {
     @Dependency(\.careScheduleRepository) private var scheduleRepository
     @ObservationIgnored
     @Dependency(\.careEventRepository) private var eventRepository
+    @ObservationIgnored
+    @Dependency(\.notificationScheduling) private var scheduler
 
-    private let scheduler = NotificationScheduler()
     private let engine = SchedulingEngine()
 
     var todayTasks: [CareTask] {
@@ -41,7 +41,7 @@ final class HomeViewModel {
         return careTasks.filter { $0.dueDate >= startOfTomorrow && $0.dueDate < endOfWindow && !$0.isOverdue }
     }
 
-    func loadAll() async {
+    func loadAll(completedTasks: Set<CareTaskKey> = []) async {
         isLoading = true
         errorMessage = nil
         do {
@@ -55,7 +55,7 @@ final class HomeViewModel {
             userProfile = try await profileTask
             let schedules = try await schedulesTask
 
-            recomputeTasks(plants: plants, catalog: catalog, profile: userProfile, schedules: schedules)
+            recomputeTasks(plants: plants, catalog: catalog, profile: userProfile, schedules: schedules, completedTasks: completedTasks)
         } catch {
             errorMessage = String(localized: "Failed to load data.")
         }
@@ -63,9 +63,6 @@ final class HomeViewModel {
     }
 
     func logCareEvent(plantID: UUID, eventType: CareEventType) async {
-        for index in careTasks.indices where careTasks[index].plantID == plantID && careTasks[index].eventType == eventType {
-            careTasks[index].status = .completed
-        }
         isLogging = true
         let event = CareEvent(
             id: UUID(),
@@ -118,10 +115,8 @@ final class HomeViewModel {
 
             try await scheduleRepository.save(updated)
 
-            await loadAll()
-            for index in careTasks.indices where careTasks[index].plantID == plantID && careTasks[index].eventType == eventType {
-                careTasks[index].status = .completed
-            }
+            let completedKey = CareTaskKey(plantID: plantID, eventType: eventType)
+            await loadAll(completedTasks: [completedKey])
             await reRegisterNotifications()
         } catch {
             errorMessage = String(localized: "Failed to log care event.")
@@ -166,7 +161,8 @@ final class HomeViewModel {
         plants: [Plant],
         catalog: [PlantSpecies],
         profile: UserProfile?,
-        schedules: [CareSchedule]
+        schedules: [CareSchedule],
+        completedTasks: Set<CareTaskKey> = []
     ) {
         let catMap = Dictionary(uniqueKeysWithValues: catalog.map { ($0.id, $0) })
         let scheduleMap = Dictionary(uniqueKeysWithValues: schedules.map { ($0.plantID, $0) })
@@ -195,13 +191,26 @@ final class HomeViewModel {
         }
 
         careTasks = allTasks.sorted { $0.dueDate < $1.dueDate }
+            .map { task in
+                let key = CareTaskKey(plantID: task.plantID, eventType: task.eventType)
+                guard completedTasks.contains(key) else { return task }
+                var updated = task
+                updated.status = .completed
+                return updated
+            }
     }
+}
+
+struct CareTaskKey: Hashable {
+    let plantID: UUID
+    let eventType: CareEventType
 }
 
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var showSettings = false
     @State private var showNotificationAlert = false
+    @State private var hasShownNotificationPrompt = false
     let onboardingCoordinator: OnboardingCoordinator
 
     init(viewModel: HomeViewModel = HomeViewModel(), onboardingCoordinator: OnboardingCoordinator) {
@@ -337,11 +346,20 @@ struct HomeView: View {
             if viewModel.careTasks.isEmpty && !viewModel.plants.isEmpty {
                 Task { await viewModel.loadAll() }
             }
+            if !hasShownNotificationPrompt && !viewModel.careTasks.isEmpty {
+                Task {
+                    @Dependency(\.notificationScheduling) var scheduler
+                    if !(await scheduler.authorizationGranted()) {
+                        showNotificationAlert = true
+                    }
+                }
+                hasShownNotificationPrompt = true
+            }
         }
     }
 
     private func requestNotificationPermission() async {
-        let scheduler = NotificationScheduler()
+        @Dependency(\.notificationScheduling) var scheduler
         let granted = await scheduler.requestPermission()
         if granted {
             await viewModel.reRegisterNotifications()

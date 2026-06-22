@@ -41,6 +41,11 @@ extension DependencyValues {
         get { self[CareEventRepositoryKey.self] }
         set { self[CareEventRepositoryKey.self] = newValue }
     }
+
+    var notificationScheduling: NotificationScheduling {
+        get { self[NotificationSchedulingKey.self] }
+        set { self[NotificationSchedulingKey.self] = newValue }
+    }
 }
 
 private enum PersistenceServiceKey: DependencyKey {
@@ -123,6 +128,11 @@ private enum CareEventRepositoryKey: DependencyKey {
     static let testValue: CareEventRepository = UnimplementedCareEventRepository()
 }
 
+private enum NotificationSchedulingKey: DependencyKey {
+    static let liveValue: NotificationScheduling = NotificationScheduler()
+    static let testValue: NotificationScheduling = UnimplementedNotificationScheduler()
+}
+
 private struct UnimplementedPlantRepository: PlantRepository {
     func fetchAll() async throws -> [Plant] {
         reportIssue("Unimplemented")
@@ -182,6 +192,26 @@ private struct UnimplementedCareEventRepository: CareEventRepository {
     }
 
     func save(_ event: CareEvent) async throws {
+        reportIssue("Unimplemented")
+    }
+}
+
+private struct UnimplementedNotificationScheduler: NotificationScheduling {
+    func requestPermission() async -> Bool {
+        reportIssue("Unimplemented")
+        return false
+    }
+
+    func authorizationGranted() async -> Bool {
+        reportIssue("Unimplemented")
+        return false
+    }
+
+    func registerTasks(_ tasks: [CareTask]) async {
+        reportIssue("Unimplemented")
+    }
+
+    func removeAll() {
         reportIssue("Unimplemented")
     }
 }

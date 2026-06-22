@@ -209,6 +209,11 @@ These run alongside the phased work. They gate specific phases but don't block e
 - "For You" dashboard card
 - Optional weekly summary notification
 
+## Known Gaps (tracked after Phase 2)
+
+- **Notification permission result is discarded**: `VerdigrisApp` requests permission on onboarding completion but ignores the result. If denied, future notification registrations silently fail. Should check `granted` and gate future registrations.
+- **Care sheet data not integrated into scheduling engine**: The `SchedulingEngine` uses `CareSheet` as a reserved parameter but doesn't consume it. The care sheet merge function (`generateCareSheet`) already computes placement-adjusted intervals, but these are text-oriented. A future phase should extract the numeric interval from the merge function and pass it to the scheduling engine, replacing the duplicate season/placement logic in `adjustedInterval` with the same computation used by `waterInstruction`.
+
 ## Cross-Cutting (every phase)
 
 - **Testing:** Unit tests for pure logic, mock-based tests for ViewModels, snapshot tests for key screens, UI tests for critical flows.

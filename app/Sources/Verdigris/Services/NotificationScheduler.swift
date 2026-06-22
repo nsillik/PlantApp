@@ -2,7 +2,14 @@ import Dependencies
 import Foundation
 import UserNotifications
 
-struct NotificationScheduler {
+protocol NotificationScheduling: Sendable {
+    func requestPermission() async -> Bool
+    func authorizationGranted() async -> Bool
+    func registerTasks(_ tasks: [CareTask]) async
+    func removeAll()
+}
+
+struct NotificationScheduler: NotificationScheduling {
     static let maxNotifications = 60
 
     func requestPermission() async -> Bool {
@@ -13,6 +20,11 @@ struct NotificationScheduler {
             reportIssue("Failed to request notification permission: \(error)")
             return false
         }
+    }
+
+    func authorizationGranted() async -> Bool {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
     }
 
     func registerTasks(_ tasks: [CareTask]) async {
@@ -34,7 +46,7 @@ struct NotificationScheduler {
             )
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(
-                identifier: "\(task.plantID)-\(task.eventType.rawValue)-\(Int(task.dueDate.timeIntervalSince1970))",
+                identifier: "\(task.plantID)-\(task.eventType.rawValue)",
                 content: content,
                 trigger: trigger
             )

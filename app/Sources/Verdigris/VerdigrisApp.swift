@@ -19,7 +19,7 @@ struct VerdigrisApp: App {
         .onChange(of: coordinator.hasCompletedOnboarding) { _, _ in
             if coordinator.hasCompletedOnboarding {
                 Task {
-                    let scheduler = NotificationScheduler()
+                    @Dependency(\.notificationScheduling) var scheduler
                     _ = await scheduler.requestPermission()
                 }
             }
