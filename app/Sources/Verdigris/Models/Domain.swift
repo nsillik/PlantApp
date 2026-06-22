@@ -3,49 +3,144 @@ import Foundation
 /// The user's profile, used to derive climate-aware care recommendations.
 struct UserProfile: Identifiable, Sendable, Codable {
     let id: UUID
-    /// City name for climate lookup.
     var city: String
-    /// Geographic latitude in decimal degrees.
     var latitude: Double
-    /// Geographic longitude in decimal degrees.
     var longitude: Double
-    /// Climate zone derived from the user's location.
     var climateClassification: ClimateClassification
 }
 
 /// Broad climate classification for care-schedule adjustments.
 enum ClimateClassification: String, Sendable, Codable {
-    /// Moderate climate with distinct seasons.
     case temperate
-    /// Warm, humid climate year-round.
     case tropical
-    /// Dry, low-humidity climate.
     case arid
+}
+
+/// Wraps localized common names for a plant species.
+struct PlantName: Sendable, Codable, Equatable {
+    var commonNamesLocalized: [String: String]
+
+    var localizedName: String {
+        let preferredLocale = Locale.current.language.languageCode?.identifier ?? "en"
+        return commonNamesLocalized[preferredLocale]
+            ?? commonNamesLocalized["en"]
+            ?? commonNamesLocalized.values.first
+            ?? "Unknown"
+    }
+
+    init(commonNamesLocalized: [String: String]) {
+        self.commonNamesLocalized = commonNamesLocalized
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let localized = try? container.decode([String: String].self, forKey: .commonNamesLocalized) {
+            self.commonNamesLocalized = localized
+        } else if let single = try? container.decode(String.self, forKey: .commonName) {
+            self.commonNamesLocalized = ["en": single]
+        } else {
+            self.commonNamesLocalized = ["en": "Unknown"]
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(commonNamesLocalized, forKey: .commonNamesLocalized)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case commonName
+        case commonNamesLocalized
+    }
+}
+
+/// Season derived from current month and hemisphere.
+enum Season: String, Sendable, Codable, CaseIterable {
+    case spring
+    case summer
+    case fall
+    case winter
+
+    static func current(latitude: Double) -> Season {
+        let month = Calendar.current.component(.month, from: Date())
+        let isNorthern = latitude >= 0
+        switch month {
+        case 3...5: return isNorthern ? .spring : .fall
+        case 6...8: return isNorthern ? .summer : .winter
+        case 9...11: return isNorthern ? .fall : .spring
+        default: return isNorthern ? .winter : .summer
+        }
+    }
+}
+
+/// Personalized care instructions output by the merge function.
+struct CareSheet: Sendable, Codable, Equatable {
+    var water: String
+    var light: String
+    var soil: String
+    var humidity: String
+    var toxicity: String
+    var commonProblems: String
 }
 
 /// Reference data describing care requirements for a plant species.
 struct PlantSpecies: Identifiable, Sendable, Codable {
     let id: UUID
-    /// Everyday name, e.g. "Monstera".
-    var commonName: String
-    /// Binomial name, e.g. "Monstera deliciosa".
+    var name: PlantName
     var scientificName: String?
-    /// Preferred light conditions.
     var lightNeeds: String?
-    /// Ideal interval between waterings, in days.
     var wateringInterval: Int
-    /// Preferred soil mix description.
     var soilType: String?
-    /// Preferred humidity level description.
     var humidityRange: String?
-    /// Pet or child safety information.
     var toxicity: String?
-    /// Growth pattern, e.g. trailing, upright, rosette.
     var growthHabit: String?
-    /// Frequent problems associated with this species.
     var commonIssues: [String]?
-    /// URLs to reference images for this species.
     var imageURLs: [String]?
+
+    init(
+        id: UUID,
+        name: PlantName,
+        scientificName: String? = nil,
+        lightNeeds: String? = nil,
+        wateringInterval: Int,
+        soilType: String? = nil,
+        humidityRange: String? = nil,
+        toxicity: String? = nil,
+        growthHabit: String? = nil,
+        commonIssues: [String]? = nil,
+        imageURLs: [String]? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.scientificName = scientificName
+        self.lightNeeds = lightNeeds
+        self.wateringInterval = wateringInterval
+        self.soilType = soilType
+        self.humidityRange = humidityRange
+        self.toxicity = toxicity
+        self.growthHabit = growthHabit
+        self.commonIssues = commonIssues
+        self.imageURLs = imageURLs
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try PlantName(from: decoder)
+        scientificName = try container.decodeIfPresent(String.self, forKey: .scientificName)
+        lightNeeds = try container.decodeIfPresent(String.self, forKey: .lightNeeds)
+        wateringInterval = try container.decode(Int.self, forKey: .wateringInterval)
+        soilType = try container.decodeIfPresent(String.self, forKey: .soilType)
+        humidityRange = try container.decodeIfPresent(String.self, forKey: .humidityRange)
+        toxicity = try container.decodeIfPresent(String.self, forKey: .toxicity)
+        growthHabit = try container.decodeIfPresent(String.self, forKey: .growthHabit)
+        commonIssues = try container.decodeIfPresent([String].self, forKey: .commonIssues)
+        imageURLs = try container.decodeIfPresent([String].self, forKey: .imageURLs)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, scientificName, lightNeeds, wateringInterval, soilType, humidityRange, toxicity, growthHabit, commonIssues, imageURLs
+    }
 }
 
 /// A plant the user owns, linked to a reference species.
@@ -64,23 +159,33 @@ struct Plant: Identifiable, Sendable, Codable {
 }
 
 /// Light exposure level at the plant's location.
-enum LightPlacement: String, Sendable, Codable {
-    /// No direct sunlight reaches the plant.
+enum LightPlacement: String, Sendable, Codable, CaseIterable {
     case indirect
-    /// Strong, direct light from a south-facing window (Northern Hemisphere).
     case directSouth
-    /// Moderate direct light from an east- or west-facing window.
     case directEastWest
+
+    var label: String {
+        switch self {
+        case .indirect: String(localized: "Indirect")
+        case .directSouth: String(localized: "Direct (south-facing)")
+        case .directEastWest: String(localized: "Direct (east or west-facing)")
+        }
+    }
 }
 
 /// Ambient humidity level at the plant's location.
-enum HumidityPlacement: String, Sendable, Codable {
-    /// Low-humidity area, e.g. near a heater or vent.
+enum HumidityPlacement: String, Sendable, Codable, CaseIterable {
     case dry
-    /// Typical indoor humidity.
     case normal
-    /// High-humidity area, e.g. bathroom or kitchen.
     case wet
+
+    var label: String {
+        switch self {
+        case .dry: String(localized: "Dry")
+        case .normal: String(localized: "Normal")
+        case .wet: String(localized: "Wet")
+        }
+    }
 }
 
 /// A logged care action performed on a plant.
@@ -134,6 +239,14 @@ struct JournalEntry: Identifiable, Sendable, Codable {
     var notes: String?
     /// Optional photo taken during the observation.
     var photoData: Data?
+}
+
+/// A resolved city from a user's search query.
+struct City: Equatable, Hashable, Sendable, Codable {
+    var name: String
+    var region: String
+    var latitude: Double
+    var longitude: Double
 }
 
 /// An environmental data point, sourced from device sensors or weather APIs.

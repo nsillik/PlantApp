@@ -22,6 +22,9 @@ let project = Project(
             infoPlist: .extendingDefault(with: [
                 "NSCameraUsageDescription": "Verdigris uses the camera to identify plants and diagnose problems.",
                 "UILaunchScreen": [:],
+                "UIBackgroundModes": [
+                    "remote-notification",
+                ],
             ]),
             sources: ["Sources/**"],
             resources: ["Resources/**"],

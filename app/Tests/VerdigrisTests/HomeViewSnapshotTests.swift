@@ -10,7 +10,8 @@ import Testing
 struct HomeViewSnapshotTests {
     @Test("Empty state renders correctly")
     func emptyState() {
-        let view = HomeView()
+        let coordinator = OnboardingCoordinator()
+        let view = HomeView(onboardingCoordinator: coordinator)
         let hostingController = UIHostingController(rootView: view)
         withDependencies {
             $0.plantRepository = MockSnapshotPlantRepository()
@@ -23,9 +24,10 @@ struct HomeViewSnapshotTests {
 
     @Test("Loading state renders correctly")
     func loadingState() {
+        let coordinator = OnboardingCoordinator()
         let viewModel = HomeViewModel()
         viewModel.isLoading = true
-        let view = HomeView(viewModel: viewModel, autoLoad: false)
+        let view = HomeView(viewModel: viewModel, autoLoad: false, onboardingCoordinator: coordinator)
         let hostingController = UIHostingController(rootView: view)
         withDependencies {
             $0.plantRepository = MockSnapshotPlantRepository()
