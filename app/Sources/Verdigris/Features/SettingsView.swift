@@ -30,6 +30,8 @@ final class SettingsViewModel {
     @Dependency(\.userProfileRepository) private var profileRepository
     @ObservationIgnored
     @Dependency(\.citySearchService) private var searchService
+    @ObservationIgnored
+    @Dependency(\.climateService) private var climateService
 
     private var searchTask: Task<Void, Never>?
 
@@ -103,20 +105,13 @@ final class SettingsViewModel {
     /// Persists the resolved city as the new profile and exits edit mode.
     func confirmCity() async {
         guard let city = selectedCity else { return }
-        let absLat = abs(city.latitude)
-        let climate: ClimateClassification
-        switch absLat {
-        case 0..<15: climate = .tropical
-        case 15..<30: climate = .arid
-        default: climate = .temperate
-        }
 
         let profile = UserProfile(
             id: currentProfile?.id ?? UUID(),
             city: city.name,
             latitude: city.latitude,
             longitude: city.longitude,
-            climateClassification: climate
+            climateClassification: climateService.climateClassification(for: city)
         )
 
         try? await profileRepository.save(profile)
