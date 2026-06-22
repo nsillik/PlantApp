@@ -14,6 +14,8 @@ final class PlantDetailViewModel {
     var showPhotoPicker = false
     var selectedPhotoItem: PhotosPickerItem?
     var pendingPhotoData: Data?
+    var showCameraCapture = false
+    var cameraAvailable = UIImagePickerController.isSourceTypeAvailable(.camera)
 
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
@@ -148,6 +150,13 @@ final class PlantDetailViewModel {
         pendingPhotoData = compressed
     }
 
+    func handleCameraCapture(_ image: UIImage) {
+        guard let data = image.jpegData(compressionQuality: 0.8) else { return }
+        let compressed = compressImage(data, targetSizeKB: 500)
+        pendingPhotoData = compressed
+        showCameraCapture = false
+    }
+
     private func compressImage(_ data: Data, targetSizeKB: Int) -> Data {
         guard let image = UIImage(data: data) else { return data }
         let targetBytes = targetSizeKB * 1024
@@ -234,16 +243,31 @@ struct PlantDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                PhotosPicker(selection: Binding(
-                    get: { viewModel.selectedPhotoItem },
-                    set: { item in
-                        viewModel.selectedPhotoItem = item
-                        if let item {
-                            Task { await viewModel.loadPhoto(from: item) }
+                HStack(spacing: 12) {
+                    PhotosPicker(selection: Binding(
+                        get: { viewModel.selectedPhotoItem },
+                        set: { item in
+                            viewModel.selectedPhotoItem = item
+                            if let item {
+                                Task { await viewModel.loadPhoto(from: item) }
+                            }
+                        }
+                    ), matching: .images) {
+                        Label(String(localized: "Choose Photo"), systemImage: "photo.on.rectangle")
+                    }
+
+                    if viewModel.cameraAvailable {
+                        Button {
+                            viewModel.showCameraCapture = true
+                        } label: {
+                            Label(String(localized: "Take Photo"), systemImage: "camera")
                         }
                     }
-                ), matching: .images) {
-                    Label(String(localized: "Attach Photo"), systemImage: "camera")
+                }
+                .sheet(isPresented: $viewModel.showCameraCapture) {
+                    CameraCaptureView { image in
+                        viewModel.handleCameraCapture(image)
+                    }
                 }
 
                 Divider()

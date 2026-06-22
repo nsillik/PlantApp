@@ -106,7 +106,7 @@ Numeric interval sources:
 
 ### 2.7 Photo attachment for care events
 - [x] `PhotosPicker` for selecting existing photo
-- [ ] Camera option for new photo (not implemented — PhotosPicker only)
+- [x] Camera option for new photo (implemented in 2.8)
 - [x] Compress to JPEG (~500KB target) before storing
 - [x] Store via `allowsExternalBinaryDataStorage` (configured in Phase 0)
 - [x] Generate thumbnail at capture time for list/timeline views
@@ -117,6 +117,21 @@ Numeric interval sources:
 - [x] Photo persists and syncs via CloudKit
 - [x] Thumbnails load instantly in lists
 - [x] Storage doesn't bloat the main Core Data store (external binary storage)
+
+### 2.8 Camera capture for care event photos
+- [x] `CameraCaptureView` — SwiftUI wrapper around `UIImagePickerController` with `.camera` source type
+- [x] Camera permission request (contextual, on first camera use)
+- [x] Integrate into `PlantDetailView` logging sheet (camera button alongside PhotosPicker)
+- [ ] Integrate into dashboard quick-action logging (deferred — quick-action is one-tap by design; camera adds friction)
+- [x] Same JPEG compression pipeline as PhotosPicker (~500KB)
+- [x] Fallback to PhotosPicker if camera unavailable (simulator, no camera)
+
+**Acceptance:**
+- [x] Camera button appears on devices with a camera
+- [x] Camera capture returns photo and attaches to the care event
+- [x] Photo compresses to ~500KB JPEG before storing
+- [ ] Works from dashboard quick-action (deferred — see above)
+- [x] Graceful fallback on simulator (camera button hidden or disabled)
 
 ---
 
