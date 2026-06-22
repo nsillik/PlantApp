@@ -1,16 +1,13 @@
 import Dependencies
 import SwiftUI
 
-/// State and actions for the home screen — the app's root view.
 @MainActor
 @Observable
 final class HomeViewModel {
-    /// Plants loaded from the repository.
     var plants: [Plant] = []
-    /// Whether a `loadPlants` call is in flight.
     var isLoading = false
-    /// A user-presentable error message, or `nil` when there is no error.
     var errorMessage: String?
+    var showCatalog = false
 
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
@@ -21,7 +18,7 @@ final class HomeViewModel {
         do {
             plants = try await repository.fetchAll()
         } catch {
-            errorMessage = "Failed to load plants: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to load plants.")
         }
         isLoading = false
     }
@@ -31,22 +28,21 @@ final class HomeViewModel {
             try await repository.delete(plant)
             plants.removeAll { $0.id == plant.id }
         } catch {
-            errorMessage = "Failed to delete plant: \(error.localizedDescription)"
+            errorMessage = String(localized: "Failed to delete plant.")
         }
     }
 }
 
-/// The app's root view, rendering the plant list (or an empty / loading / error state).
-///
-/// `loadPlants()` is called automatically on appear unless `autoLoad` is set to `false`,
-/// which snapshot tests use to avoid triggering async work.
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
+    @State private var showSettings = false
+    let onboardingCoordinator: OnboardingCoordinator
     private let autoLoad: Bool
 
-    init(viewModel: HomeViewModel = HomeViewModel(), autoLoad: Bool = true) {
+    init(viewModel: HomeViewModel = HomeViewModel(), autoLoad: Bool = true, onboardingCoordinator: OnboardingCoordinator) {
         self._viewModel = State(initialValue: viewModel)
         self.autoLoad = autoLoad
+        self.onboardingCoordinator = onboardingCoordinator
     }
 
     var body: some View {
@@ -68,12 +64,10 @@ struct HomeView: View {
                     )
                 } else {
                     List(viewModel.plants, id: \.id) { plant in
-                        VStack(alignment: .leading) {
-                            Text(plant.name)
-                                .font(.headline)
-                            Text(String(localized: "Added \(plant.dateAdded.formatted(date: .abbreviated, time: .omitted))"))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        NavigationLink {
+                            PlantDetailView(plant: plant)
+                        } label: {
+                            PlantRowView(plant: plant)
                         }
                         .swipeActions {
                             Button(String(localized: "Delete"), role: .destructive) {
@@ -83,15 +77,66 @@ struct HomeView: View {
                     }
                 }
             }
-            .navigationTitle(String(localized: "Verdigris"))
+            .navigationTitle(String(localized: "My Plants"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(String(localized: "Add")) {
+                        viewModel.showCatalog = true
+                    }
+                }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
+                }
+            }
+            .sheet(isPresented: $viewModel.showCatalog) {
+                CatalogBrowseView { _, _ in
+                    viewModel.showCatalog = false
+                    Task { await viewModel.loadPlants() }
+                }
+            }
+            .sheet(isPresented: $showSettings) {
+                SettingsView {
+                    onboardingCoordinator.resetOnboarding()
+                }
+            }
         }
         .task {
             guard autoLoad else { return }
             await viewModel.loadPlants()
         }
+        .onChange(of: viewModel.showCatalog) { _, showing in
+            if !showing { Task { await viewModel.loadPlants() } }
+        }
     }
 }
 
-#Preview {
-    HomeView()
+struct PlantRowView: View {
+    let plant: Plant
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(.systemGray5))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "leaf")
+                    .font(.title3)
+                    .foregroundStyle(.green)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(plant.name)
+                    .font(.headline)
+                if let light = plant.placementLight?.label {
+                    Text(String(localized: "\(light) light"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(.vertical, 4)
+    }
 }

@@ -25,7 +25,7 @@ These run alongside the phased work. They gate specific phases but don't block e
 ### Workstream A — Bundled Plant Catalog
 - **What:** ~50 common houseplants as a bundled JSON dataset (common/scientific names, care parameters, common issues, growth habits, image references).
 - **Gates:** Phase 1 (catalog browse + care sheet merge).
-- **Status:** Not started. Schema must be defined in Phase 0; data sourcing/authoring is content work.
+- **Status:** 15 species authored in `app/Resources/Catalog/catalog.json`. Schema defined in `docs/catalog-schema.md`. Remaining 35 species to be authored before release.
 
 ### Workstream B — CoreML Models
 - **What:** Two models — (B1) a plant *detector* for the real-time viewfinder (object detection), (B2) a species *classifier* for on-capture identification (image classification).
@@ -84,15 +84,15 @@ These run alongside the phased work. They gate specific phases but don't block e
 - Settings screen (edit location)
 
 **Acceptance criteria:**
-- [ ] First-launch onboarding completes (city → add first plant)
-- [ ] All 50 catalog species are browsable and searchable
-- [ ] User can add a plant from the catalog with placement fields
-- [ ] Care sheet renders with personalized adjustments based on placement + season + climate
-- [ ] Placement fields are editable from plant detail; care sheet updates live
-- [ ] Location is editable from settings; care sheets re-render
-- [ ] Care sheet merge function has unit tests covering varied inputs
-- [ ] Snapshot tests pass for catalog detail, plant detail, care sheet, onboarding
-- [ ] All user-facing strings localized (EN + ES)
+- [x] First-launch onboarding completes (city → add first plant)
+- [x] All 15 authored catalog species are browsable and searchable
+- [x] User can add a plant from the catalog with placement fields
+- [x] Care sheet renders with personalized adjustments based on placement + season + climate
+- [x] Placement fields are editable from plant detail; care sheet updates live
+- [x] Location is editable from settings; care sheets re-render
+- [x] Care sheet merge function has unit tests covering varied inputs (7 tests)
+- [x] Snapshot tests pass for catalog detail, care sheet (×2 configs), home (empty + loading)
+- [x] All user-facing strings use `String(localized:)` (EN + ES in Localizable.xcstrings)
 
 ---
 

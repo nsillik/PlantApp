@@ -16,6 +16,16 @@ extension DependencyValues {
         get { self[UserProfileRepositoryKey.self] }
         set { self[UserProfileRepositoryKey.self] = newValue }
     }
+
+    var catalogService: CatalogService {
+        get { self[CatalogServiceKey.self] }
+        set { self[CatalogServiceKey.self] = newValue }
+    }
+
+    var citySearchService: CitySearchService {
+        get { self[CitySearchServiceKey.self] }
+        set { self[CitySearchServiceKey.self] = newValue }
+    }
 }
 
 private enum PersistenceServiceKey: DependencyKey {
@@ -29,6 +39,37 @@ private enum PlantRepositoryKey: DependencyKey {
     )
 
     static let testValue: PlantRepository = UnimplementedPlantRepository()
+}
+
+private enum CatalogServiceKey: DependencyKey {
+    static let liveValue: CatalogService = BundleCatalogService()
+    static let testValue: CatalogService = UnimplementedCatalogService()
+}
+
+private struct UnimplementedCatalogService: CatalogService {
+    func loadCatalog() async throws -> [PlantSpecies] {
+        reportIssue("Unimplemented")
+        return []
+    }
+}
+
+private enum CitySearchServiceKey: DependencyKey {
+    static let liveValue: CitySearchService = {
+        MainActor.assumeIsolated { MapKitCitySearchService() }
+    }()
+    static let testValue: CitySearchService = UnimplementedCitySearchService()
+}
+
+private struct UnimplementedCitySearchService: CitySearchService {
+    func search(query: String) async throws -> [CitySuggestion] {
+        reportIssue("Unimplemented")
+        throw CitySearchError.notFound
+    }
+
+    func resolve(_ suggestion: CitySuggestion) async throws -> City {
+        reportIssue("Unimplemented")
+        throw CitySearchError.resolutionFailed
+    }
 }
 
 private enum UserProfileRepositoryKey: DependencyKey {
