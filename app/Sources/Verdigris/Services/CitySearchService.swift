@@ -10,10 +10,10 @@ protocol CitySearchService: Sendable {
     func resolve(_ suggestion: CitySuggestion) async throws -> City
 }
 
+@MainActor
 final class MapKitCitySearchService: NSObject, @unchecked Sendable, CitySearchService {
     private let completer = MKLocalSearchCompleter()
-    private var searchContinuation: CheckedContinuation<[MKLocalSearchCompletion], Error>?
-    private var searchGeneration = 0
+    private var activeContinuation: CheckedContinuation<[MKLocalSearchCompletion], any Error>?
 
     override init() {
         super.init()
@@ -21,22 +21,24 @@ final class MapKitCitySearchService: NSObject, @unchecked Sendable, CitySearchSe
         completer.delegate = self
     }
 
-    @MainActor
     func search(query: String) async throws -> [CitySuggestion] {
-        let generation = searchGeneration + 1
-        searchGeneration = generation
-
-        searchContinuation?.resume(throwing: CancellationError())
-        searchContinuation = nil
-
         completer.cancel()
-        completer.queryFragment = query
+        activeContinuation?.resume(throwing: CancellationError())
+        activeContinuation = nil
 
-        let results = try await withCheckedThrowingContinuation { cont in
-            searchContinuation = cont
+        let completer = self.completer
+        let results = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { cont in
+                activeContinuation = cont
+                completer.queryFragment = query
+            }
+        } onCancel: {
+            completer.cancel()
+            MainActor.assumeIsolated {
+                activeContinuation?.resume(throwing: CancellationError())
+                activeContinuation = nil
+            }
         }
-
-        guard searchGeneration == generation else { throw CancellationError() }
 
         return results.compactMap { completion -> CitySuggestion? in
             let title = completion.title.trimmingCharacters(in: .whitespaces)
@@ -55,7 +57,6 @@ final class MapKitCitySearchService: NSObject, @unchecked Sendable, CitySearchSe
         }
     }
 
-    @MainActor
     func resolve(_ suggestion: CitySuggestion) async throws -> City {
         try await withCheckedThrowingContinuation { cont in
             let request = MKLocalSearch.Request()
@@ -84,15 +85,15 @@ final class MapKitCitySearchService: NSObject, @unchecked Sendable, CitySearchSe
     }
 }
 
-extension MapKitCitySearchService: MKLocalSearchCompleterDelegate {
+extension MapKitCitySearchService: @preconcurrency MKLocalSearchCompleterDelegate {
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        searchContinuation?.resume(returning: completer.results)
-        searchContinuation = nil
+        activeContinuation?.resume(returning: completer.results)
+        activeContinuation = nil
     }
 
     func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: any Error) {
-        searchContinuation?.resume(throwing: error)
-        searchContinuation = nil
+        activeContinuation?.resume(throwing: error)
+        activeContinuation = nil
     }
 }
 

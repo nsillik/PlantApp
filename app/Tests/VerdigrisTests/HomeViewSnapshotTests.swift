@@ -27,7 +27,7 @@ struct HomeViewSnapshotTests {
         let coordinator = OnboardingCoordinator()
         let viewModel = HomeViewModel()
         viewModel.isLoading = true
-        let view = HomeView(viewModel: viewModel, autoLoad: false, onboardingCoordinator: coordinator)
+        let view = HomeView(viewModel: viewModel, onboardingCoordinator: coordinator)
         let hostingController = UIHostingController(rootView: view)
         withDependencies {
             $0.plantRepository = MockSnapshotPlantRepository()

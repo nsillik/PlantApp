@@ -1,10 +1,3 @@
-import Foundation
-
-/// Determines a climate band from a resolved city.
-///
-/// The current implementation uses a simple latitude-based heuristic. In the
-/// future this can be replaced with a richer model (Köppen classification,
-/// weather API, etc.).
 protocol ClimateService: Sendable {
     func climateClassification(for city: City) -> ClimateClassification
 }

@@ -25,7 +25,7 @@ Before starting implementation, define these domain types that Phase 1 depends o
 ### 1.1 UserProfile model + persistence
 - [x] Domain model: `UserProfile` (city: String, latitude: Double, longitude: Double, climateClassification: ClimateClassification) — already defined
 - [x] Repository: save/fetch the single user profile — already implemented (`UserProfileRepository` + `CoreDataUserProfileRepository`)
-- [ ] No further work needed unless the model shape changes during this phase
+- [x] No further work needed.
 
 **Acceptance:**
 - Profile can be created, saved, loaded, and updated

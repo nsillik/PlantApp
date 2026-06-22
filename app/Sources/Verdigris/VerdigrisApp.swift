@@ -49,24 +49,12 @@ struct OnboardingRootView: View {
                 .sheet(isPresented: $showCatalog) {
                     CatalogBrowseView { _, _ in
                         showCatalog = false
-                        saveProfileAndFinish()
+                        Task { await coordinator.saveProfileAndComplete() }
                     }
                 }
             case .complete:
                 HomeView(onboardingCoordinator: coordinator)
             }
-        }
-    }
-
-    private func saveProfileAndFinish() {
-        Task {
-            if let profile = coordinator.userProfile {
-                let repo: UserProfileRepository = CoreDataUserProfileRepository(
-                    persistenceService: PersistenceController.shared
-                )
-                try? await repo.save(profile)
-            }
-            coordinator.completeOnboarding()
         }
     }
 }

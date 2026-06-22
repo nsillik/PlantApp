@@ -31,24 +31,56 @@ final class PlantDetailViewModel {
             catalogSpecies = allSpecies.first { $0.id == plant.speciesID }
             userProfile = try await profileRepository.fetch()
             regenerateCareSheet()
-        } catch {}
+        } catch {
+            reportIssue("""
+              Failed to load plant detail data for \(plant.id): \
+              \(error.localizedDescription)
+              """)
+        }
     }
 
     func updatePlacement(light: LightPlacement) {
         plant.placementLight = light
         regenerateCareSheet()
-        Task { try? await repository.save(plant) }
+        Task {
+            do {
+                try await repository.save(plant)
+            } catch {
+                reportIssue("""
+                  Failed to save light placement for \(plant.id): \
+                  \(error.localizedDescription)
+                  """)
+            }
+        }
     }
 
     func updatePlacement(humidity: HumidityPlacement) {
         plant.placementHumidity = humidity
         regenerateCareSheet()
-        Task { try? await repository.save(plant) }
+        Task {
+            do {
+                try await repository.save(plant)
+            } catch {
+                reportIssue("""
+                  Failed to save humidity placement for \(plant.id): \
+                  \(error.localizedDescription)
+                  """)
+            }
+        }
     }
 
     func updateName(_ name: String) {
         plant.name = name
-        Task { try? await repository.save(plant) }
+        Task {
+            do {
+                try await repository.save(plant)
+            } catch {
+                reportIssue("""
+                  Failed to save plant name for \(plant.id): \
+                  \(error.localizedDescription)
+                  """)
+            }
+        }
     }
 
     private func regenerateCareSheet() {

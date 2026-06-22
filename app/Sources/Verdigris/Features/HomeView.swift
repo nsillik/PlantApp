@@ -37,11 +37,9 @@ struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var showSettings = false
     let onboardingCoordinator: OnboardingCoordinator
-    private let autoLoad: Bool
 
-    init(viewModel: HomeViewModel = HomeViewModel(), autoLoad: Bool = true, onboardingCoordinator: OnboardingCoordinator) {
+    init(viewModel: HomeViewModel = HomeViewModel(), onboardingCoordinator: OnboardingCoordinator) {
         self._viewModel = State(initialValue: viewModel)
-        self.autoLoad = autoLoad
         self.onboardingCoordinator = onboardingCoordinator
     }
 
@@ -105,7 +103,6 @@ struct HomeView: View {
             }
         }
         .task {
-            guard autoLoad else { return }
             await viewModel.loadPlants()
         }
         .onChange(of: viewModel.showCatalog) { _, showing in
