@@ -37,12 +37,12 @@ jobs:
       - uses: jdx/mise-action@v2
       - run: tuist install
       - run: tuist generate
-      - run: tuist test
-      - name: Upload snapshot failures (for debugging)
-        if: failure()
+      - run: tuist test --device "iPhone 17 Pro"
+        env:
+          RECORD_SNAPSHOTS: 1
+      - name: Upload generated snapshot references
         uses: actions/upload-artifact@v4
         with:
-          name: snapshot-failures
+          name: snapshot-references
           path: |
             app/Tests/VerdigrisTests/__Snapshots__/
-            app/Tests/VerdigrisTests/__Snapshots__/**/*.png
