@@ -1,4 +1,5 @@
 import CoreData
+import Dependencies
 import Foundation
 
 /// Persistence operations for the user's plants.
@@ -270,10 +271,14 @@ private extension CareScheduleEntity {
 private extension CareEventEntity {
     func toDomain() -> CareEvent? {
         guard let id, let plantID, let eventType, let timestamp else { return nil }
+        let resolvedType = CareEventType(rawValue: eventType) ?? {
+            reportIssue("Unknown CareEventType raw value: \(eventType)")
+            return CareEventType.watered
+        }()
         return CareEvent(
             id: id,
             plantID: plantID,
-            eventType: CareEventType(rawValue: eventType) ?? .watered,
+            eventType: resolvedType,
             timestamp: timestamp,
             photoData: photoData,
             notes: notes
