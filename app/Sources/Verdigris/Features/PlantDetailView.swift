@@ -2,6 +2,11 @@ import Dependencies
 import PhotosUI
 import SwiftUI
 
+struct PendingCareEvent: Identifiable {
+    let id: UUID
+    let eventType: CareEventType
+}
+
 @MainActor
 @Observable
 final class PlantDetailViewModel {
@@ -11,11 +16,9 @@ final class PlantDetailViewModel {
     var careSheet: CareSheet?
     var careEvents: [CareEvent] = []
     var isLoadingEvents = false
-    var showPhotoPicker = false
-    var selectedPhotoItem: PhotosPickerItem?
-    var pendingPhotoData: Data?
-    var showCameraCapture = false
-    var cameraAvailable = UIImagePickerController.isSourceTypeAvailable(.camera)
+    var pendingEvent: PendingCareEvent?
+    var pendingEventNotes: String = ""
+    var pendingEventPhotoData: Data?
 
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
@@ -99,18 +102,28 @@ final class PlantDetailViewModel {
         }
     }
 
-    func logCareEvent(eventType: CareEventType) async {
-        let photoData = pendingPhotoData
-        pendingPhotoData = nil
-        selectedPhotoItem = nil
+    func beginLogCareEvent(_ type: CareEventType) {
+        pendingEvent = PendingCareEvent(id: UUID(), eventType: type)
+        pendingEventNotes = ""
+        pendingEventPhotoData = nil
+    }
+
+    func confirmCareEvent() async {
+        guard let pendingEvent else { return }
 
         let event = CareEvent(
-            id: UUID(),
+            id: pendingEvent.id,
             plantID: plant.id,
-            eventType: eventType,
+            eventType: pendingEvent.eventType,
             timestamp: Date(),
-            photoData: photoData
+            photoData: pendingEventPhotoData,
+            notes: pendingEventNotes.isEmpty ? nil : pendingEventNotes
         )
+
+        let eventType = pendingEvent.eventType
+        self.pendingEvent = nil
+        pendingEventPhotoData = nil
+        pendingEventNotes = ""
 
         do {
             try await eventRepository.save(event)
@@ -144,17 +157,22 @@ final class PlantDetailViewModel {
         }
     }
 
+    func cancelCareEvent() {
+        pendingEvent = nil
+        pendingEventNotes = ""
+        pendingEventPhotoData = nil
+    }
+
     func loadPhoto(from item: PhotosPickerItem) async {
         guard let data = try? await item.loadTransferable(type: Data.self) else { return }
         let compressed = compressImage(data, targetSizeKB: 500)
-        pendingPhotoData = compressed
+        pendingEventPhotoData = compressed
     }
 
     func handleCameraCapture(_ image: UIImage) {
         guard let data = image.jpegData(compressionQuality: 0.8) else { return }
         let compressed = compressImage(data, targetSizeKB: 500)
-        pendingPhotoData = compressed
-        showCameraCapture = false
+        pendingEventPhotoData = compressed
     }
 
     private func compressImage(_ data: Data, targetSizeKB: Int) -> Data {
@@ -224,49 +242,16 @@ struct PlantDetailView: View {
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     CareActionButton(title: String(localized: "Watered"), icon: "drop.fill", color: .blue) {
-                        Task { await viewModel.logCareEvent(eventType: .watered) }
+                        viewModel.beginLogCareEvent(.watered)
                     }
                     CareActionButton(title: String(localized: "Fertilized"), icon: "leaf.arrow.circlepath", color: .green) {
-                        Task { await viewModel.logCareEvent(eventType: .fertilized) }
+                        viewModel.beginLogCareEvent(.fertilized)
                     }
                     CareActionButton(title: String(localized: "Pruned"), icon: "scissors", color: .orange) {
-                        Task { await viewModel.logCareEvent(eventType: .pruned) }
+                        viewModel.beginLogCareEvent(.pruned)
                     }
                     CareActionButton(title: String(localized: "Repotted"), icon: "tray.full", color: .brown) {
-                        Task { await viewModel.logCareEvent(eventType: .repotted) }
-                    }
-                }
-
-                if viewModel.selectedPhotoItem != nil || viewModel.pendingPhotoData != nil {
-                    Text(String(localized: "Photo attached"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack(spacing: 12) {
-                    PhotosPicker(selection: Binding(
-                        get: { viewModel.selectedPhotoItem },
-                        set: { item in
-                            viewModel.selectedPhotoItem = item
-                            if let item {
-                                Task { await viewModel.loadPhoto(from: item) }
-                            }
-                        }
-                    ), matching: .images) {
-                        Label(String(localized: "Choose Photo"), systemImage: "photo.on.rectangle")
-                    }
-
-                    if viewModel.cameraAvailable {
-                        Button {
-                            viewModel.showCameraCapture = true
-                        } label: {
-                            Label(String(localized: "Take Photo"), systemImage: "camera")
-                        }
-                    }
-                }
-                .sheet(isPresented: $viewModel.showCameraCapture) {
-                    CameraCaptureView { image in
-                        viewModel.handleCameraCapture(image)
+                        viewModel.beginLogCareEvent(.repotted)
                     }
                 }
 
@@ -332,6 +317,9 @@ struct PlantDetailView: View {
         }
         .task {
             await viewModel.loadData()
+        }
+        .sheet(item: $viewModel.pendingEvent) { pendingEvent in
+            CareEventConfirmationView(viewModel: viewModel, pendingEvent: pendingEvent)
         }
     }
 }

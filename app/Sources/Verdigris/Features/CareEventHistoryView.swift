@@ -18,6 +18,11 @@ struct CareEventHistoryView: View {
                     Text(event.timestamp, style: .date)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if let notes = event.notes {
+                        Text(notes)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Spacer()

@@ -54,6 +54,7 @@ final class CareEventEntity: NSManagedObject {
     @NSManaged var eventType: String?
     @NSManaged var timestamp: Date?
     @NSManaged var photoData: Data?
+    @NSManaged var notes: String?
 
     @nonobjc static func fetchRequest() -> NSFetchRequest<CareEventEntity> {
         NSFetchRequest<CareEventEntity>(entityName: "CareEventEntity")
