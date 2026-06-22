@@ -271,6 +271,11 @@ struct City: Equatable, Hashable, Sendable, Codable {
 
 /// A scheduled care task produced by the scheduling engine.
 struct CareTask: Identifiable, Sendable, Equatable {
+    enum Status: String, Sendable, Equatable {
+        case incomplete
+        case completed
+    }
+
     let id: UUID
     /// The plant this task is for.
     var plantID: UUID
@@ -280,8 +285,10 @@ struct CareTask: Identifiable, Sendable, Equatable {
     var eventType: CareEventType
     /// When this task is due.
     var dueDate: Date
-    /// Whether the due date has passed.
-    var isOverdue: Bool
+    /// Whether the due date has passed (convenience for display logic).
+    var isOverdue: Bool { status == .incomplete && dueDate < Date.now }
+    /// Current completion status of this task instance.
+    var status: Status
 }
 
 /// An environmental data point, sourced from device sensors or weather APIs.
