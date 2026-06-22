@@ -24,6 +24,8 @@ final class LocationOnboardingViewModel {
 
     @ObservationIgnored
     @Dependency(\.citySearchService) private var searchService
+    @ObservationIgnored
+    @Dependency(\.climateService) private var climateService
 
     private var searchTask: Task<Void, Never>?
 
@@ -93,17 +95,9 @@ final class LocationOnboardingViewModel {
         }
     }
 
-    /// Derives a climate band from absolute latitude.
-    /// - Tropical: 0–15°
-    /// - Arid: 15–30°
-    /// - Temperate: >30°
-    func climateClassification(for latitude: Double) -> ClimateClassification {
-        let absLat = abs(latitude)
-        switch absLat {
-        case 0..<15: return .tropical
-        case 15..<30: return .arid
-        default: return .temperate
-        }
+    /// Returns the climate classification label for display purposes.
+    func climateLabel(for city: City) -> String {
+        climateService.climateClassification(for: city).rawValue
     }
 
     /// Constructs the persisted `UserProfile` from the currently selected city.
@@ -115,7 +109,7 @@ final class LocationOnboardingViewModel {
             city: city.name,
             latitude: city.latitude,
             longitude: city.longitude,
-            climateClassification: climateClassification(for: city.latitude)
+            climateClassification: climateService.climateClassification(for: city)
         )
     }
 }
@@ -186,7 +180,7 @@ struct LocationOnboardingView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(city.name)
                         .font(.headline)
-                    Text(String(localized: "\(viewModel.climateClassification(for: city.latitude).rawValue.capitalized) climate"))
+                    Text(String(localized: "\(viewModel.climateLabel(for: city).capitalized) climate"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

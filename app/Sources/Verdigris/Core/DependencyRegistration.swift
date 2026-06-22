@@ -26,6 +26,11 @@ extension DependencyValues {
         get { self[CitySearchServiceKey.self] }
         set { self[CitySearchServiceKey.self] = newValue }
     }
+
+    var climateService: ClimateService {
+        get { self[ClimateServiceKey.self] }
+        set { self[ClimateServiceKey.self] = newValue }
+    }
 }
 
 private enum PersistenceServiceKey: DependencyKey {
@@ -69,6 +74,18 @@ private struct UnimplementedCitySearchService: CitySearchService {
     func resolve(_ suggestion: CitySuggestion) async throws -> City {
         reportIssue("Unimplemented")
         throw CitySearchError.resolutionFailed
+    }
+}
+
+private enum ClimateServiceKey: DependencyKey {
+    static let liveValue: ClimateService = LiveClimateService()
+    static let testValue: ClimateService = UnimplementedClimateService()
+}
+
+private struct UnimplementedClimateService: ClimateService {
+    func climateClassification(for city: City) -> ClimateClassification {
+        reportIssue("Unimplemented")
+        return .temperate
     }
 }
 
