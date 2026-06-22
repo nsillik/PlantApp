@@ -63,6 +63,9 @@ final class HomeViewModel {
     }
 
     func logCareEvent(plantID: UUID, eventType: CareEventType) async {
+        for index in careTasks.indices where careTasks[index].plantID == plantID && careTasks[index].eventType == eventType {
+            careTasks[index].status = .completed
+        }
         isLogging = true
         let event = CareEvent(
             id: UUID(),
@@ -116,6 +119,9 @@ final class HomeViewModel {
             try await scheduleRepository.save(updated)
 
             await loadAll()
+            for index in careTasks.indices where careTasks[index].plantID == plantID && careTasks[index].eventType == eventType {
+                careTasks[index].status = .completed
+            }
             await reRegisterNotifications()
         } catch {
             errorMessage = String(localized: "Failed to log care event.")
@@ -374,23 +380,45 @@ private struct TaskRow: View {
 
     var body: some View {
         HStack {
-            Image(systemName: task.isOverdue ? "exclamationmark.circle.fill" : "circle")
-                .foregroundStyle(task.isOverdue ? .red : .secondary)
+            Image(systemName: imageName)
+                .foregroundStyle(imageColor)
             VStack(alignment: .leading) {
                 Text(taskLabel(for: task.eventType))
                     .font(.subheadline)
                     .fontWeight(task.isOverdue ? .bold : .regular)
+                    .strikethrough(task.status == .completed)
                 Text(task.dueDate, style: .date)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Button(String(localized: "Done")) {
-                onLog(task.eventType)
+            if task.status == .completed {
+                Text(String(localized: "Done"))
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            } else {
+                Button(String(localized: "Done")) {
+                    onLog(task.eventType)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(isLoading)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .disabled(isLoading)
+        }
+        .opacity(task.status == .completed ? 0.6 : 1)
+    }
+
+    private var imageName: String {
+        switch task.status {
+        case .completed: "checkmark.circle.fill"
+        case .incomplete: task.isOverdue ? "exclamationmark.circle.fill" : "circle"
+        }
+    }
+
+    private var imageColor: Color {
+        switch task.status {
+        case .completed: .green
+        case .incomplete: task.isOverdue ? .red : .secondary
         }
     }
 

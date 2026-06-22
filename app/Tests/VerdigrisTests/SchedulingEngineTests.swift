@@ -126,7 +126,7 @@ struct SchedulingEngineTests {
         for (f, s) in zip(first, second) {
             #expect(f.eventType == s.eventType)
             #expect(f.dueDate == s.dueDate)
-            #expect(f.isOverdue == s.isOverdue)
+            #expect(f.status == s.status)
             #expect(f.plantID == s.plantID)
             #expect(f.plantName == s.plantName)
         }

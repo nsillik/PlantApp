@@ -23,9 +23,9 @@ struct Phase2SnapshotTests {
 
         viewModel.plants = [plant]
         viewModel.careTasks = [
-            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .watered, dueDate: now, isOverdue: true),
-            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .fertilized, dueDate: todayEnd, isOverdue: false),
-            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .pruned, dueDate: tomorrow, isOverdue: false),
+            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .watered, dueDate: now, status: .incomplete),
+            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .fertilized, dueDate: todayEnd, status: .incomplete),
+            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .pruned, dueDate: tomorrow, status: .incomplete),
         ]
 
         let view = HomeView(viewModel: viewModel, onboardingCoordinator: coordinator)
