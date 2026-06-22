@@ -219,6 +219,8 @@ struct CareEvent: Identifiable, Sendable, Codable {
     var timestamp: Date
     /// Optional photo captured during the care event.
     var photoData: Data?
+    /// Optional notes the user added when logging the event.
+    var notes: String?
 }
 
 /// Kinds of care actions that can be logged.

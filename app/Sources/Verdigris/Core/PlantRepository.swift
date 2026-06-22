@@ -275,7 +275,8 @@ private extension CareEventEntity {
             plantID: plantID,
             eventType: CareEventType(rawValue: eventType) ?? .watered,
             timestamp: timestamp,
-            photoData: photoData
+            photoData: photoData,
+            notes: notes
         )
     }
 
@@ -285,5 +286,6 @@ private extension CareEventEntity {
         eventType = event.eventType.rawValue
         timestamp = event.timestamp
         photoData = event.photoData
+        notes = event.notes
     }
 }
