@@ -12,7 +12,7 @@ Verdigris is an iOS app that helps people care for their houseplants: identify p
 - **AI/ML:** Vision, CoreML, NaturalLanguage (on-device); optional OpenAI-compatible API
 - **Testing:** Swift Testing (`@Suite`/`@Test`), PointFree `SnapshotTesting`
 - **Linting:** SwiftLint
-- **CI:** GitHub Actions
+- **CI:** GitHub Actions (tests run on macOS 15 via `tuist test --device "iPhone 17 Pro"`)
 - **Project generation:** Tuist (via mise)
 - **Tool versioning:** mise
 - **Developer team:** T9G4KUKSVP
@@ -49,10 +49,10 @@ tuist build
 ## How to Test
 
 ```sh
-tuist test
+tuist test --device "iPhone 17 Pro"     # Snapshot tests (matches CI)
 ```
 
-Unit tests use Swift Testing (`@Suite`/`@Test`). Snapshot tests use `SnapshotTesting`. ViewModels are tested with mock services via `withDependencies { ... }`.
+Unit tests use Swift Testing (`@Suite`/`@Test`). Snapshot tests use `SnapshotTesting`. ViewModels are tested with mock services via `withDependencies { ... }`. To regenerate snapshot references, set `RECORD_SNAPSHOTS=1` before running.
 
 ## How to Verify (Lint)
 
