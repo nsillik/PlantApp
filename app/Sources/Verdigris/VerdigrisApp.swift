@@ -16,6 +16,14 @@ struct VerdigrisApp: App {
                     .environment(\.managedObjectContext, persistenceService.viewContext)
             }
         }
+        .onChange(of: coordinator.hasCompletedOnboarding) { _, _ in
+            if coordinator.hasCompletedOnboarding {
+                Task {
+                    let scheduler = NotificationScheduler()
+                    _ = await scheduler.requestPermission()
+                }
+            }
+        }
     }
 }
 

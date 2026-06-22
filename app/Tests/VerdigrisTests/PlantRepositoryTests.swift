@@ -22,9 +22,13 @@ struct PlantRepositoryTests {
 
         await withDependencies {
             $0.plantRepository = mockRepository
+            $0.catalogService = MockPlantTestCatalogService()
+            $0.careScheduleRepository = MockPlantTestScheduleRepository()
+            $0.careEventRepository = MockPlantTestEventRepository()
+            $0.userProfileRepository = MockPlantTestProfileRepository()
         } operation: {
             let viewModel = await MainActor.run { HomeViewModel() }
-            await viewModel.loadPlants()
+            await viewModel.loadAll()
             await MainActor.run {
                 #expect(viewModel.plants.count == 1)
                 #expect(viewModel.plants.first?.name == "Test Monstera")
@@ -56,4 +60,25 @@ actor MockPlantRepository: PlantRepository {
     func delete(_ plant: Plant) async throws {
         storage.removeAll { $0.id == plant.id }
     }
+}
+
+private struct MockPlantTestCatalogService: CatalogService {
+    func loadCatalog() async throws -> [PlantSpecies] { [] }
+}
+
+private struct MockPlantTestScheduleRepository: CareScheduleRepository {
+    func fetch(plantID: UUID) async throws -> CareSchedule? { nil }
+    func fetchAll() async throws -> [CareSchedule] { [] }
+    func save(_ schedule: CareSchedule) async throws {}
+}
+
+private struct MockPlantTestEventRepository: CareEventRepository {
+    func fetch(plantID: UUID) async throws -> [CareEvent] { [] }
+    func fetchAll() async throws -> [CareEvent] { [] }
+    func save(_ event: CareEvent) async throws {}
+}
+
+private struct MockPlantTestProfileRepository: UserProfileRepository {
+    func fetch() async throws -> UserProfile? { nil }
+    func save(_ profile: UserProfile) async throws {}
 }

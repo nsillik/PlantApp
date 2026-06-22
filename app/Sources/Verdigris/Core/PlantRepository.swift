@@ -24,6 +24,28 @@ protocol UserProfileRepository: Sendable {
     func save(_ profile: UserProfile) async throws
 }
 
+/// Persistence operations for care schedules.
+protocol CareScheduleRepository: Sendable {
+    /// Returns the schedule for a given plant, or `nil` if none exists.
+    func fetch(plantID: UUID) async throws -> CareSchedule?
+    /// Returns all schedules.
+    func fetchAll() async throws -> [CareSchedule]
+    /// Creates or updates a schedule.
+    func save(_ schedule: CareSchedule) async throws
+}
+
+/// Persistence operations for care events.
+protocol CareEventRepository: Sendable {
+    /// Returns all events for a given plant, sorted by timestamp descending.
+    func fetch(plantID: UUID) async throws -> [CareEvent]
+    /// Returns all events across all plants, sorted by timestamp descending.
+    func fetchAll() async throws -> [CareEvent]
+    /// Creates an event.
+    func save(_ event: CareEvent) async throws
+}
+
+// MARK: - CoreData Implementations
+
 /// Core Data-backed implementation of `PlantRepository`.
 ///
 /// Uses `PersistenceService.withBackgroundContext` to perform all operations on a background
@@ -103,6 +125,79 @@ actor CoreDataUserProfileRepository: UserProfileRepository {
     }
 }
 
+actor CoreDataCareScheduleRepository: CareScheduleRepository {
+    private let persistenceService: PersistenceService
+
+    init(persistenceService: PersistenceService) {
+        self.persistenceService = persistenceService
+    }
+
+    func fetch(plantID: UUID) async throws -> CareSchedule? {
+        try await persistenceService.withBackgroundContext { context in
+            let request = CareScheduleEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
+            let entities = try context.fetch(request)
+            return entities.first?.toDomain()
+        }
+    }
+
+    func fetchAll() async throws -> [CareSchedule] {
+        try await persistenceService.withBackgroundContext { context in
+            let request = CareScheduleEntity.fetchRequest()
+            let entities = try context.fetch(request)
+            return entities.compactMap { $0.toDomain() }
+        }
+    }
+
+    func save(_ schedule: CareSchedule) async throws {
+        try await persistenceService.withBackgroundContext { context in
+            let request = CareScheduleEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "plantID == %@", schedule.plantID as CVarArg)
+            let entities = try context.fetch(request)
+            let entity = entities.first ?? CareScheduleEntity(context: context)
+            entity.fromDomain(schedule)
+            try context.save()
+        }
+    }
+}
+
+actor CoreDataCareEventRepository: CareEventRepository {
+    private let persistenceService: PersistenceService
+
+    init(persistenceService: PersistenceService) {
+        self.persistenceService = persistenceService
+    }
+
+    func fetch(plantID: UUID) async throws -> [CareEvent] {
+        try await persistenceService.withBackgroundContext { context in
+            let request = CareEventEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
+            request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            let entities = try context.fetch(request)
+            return entities.compactMap { $0.toDomain() }
+        }
+    }
+
+    func fetchAll() async throws -> [CareEvent] {
+        try await persistenceService.withBackgroundContext { context in
+            let request = CareEventEntity.fetchRequest()
+            request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            let entities = try context.fetch(request)
+            return entities.compactMap { $0.toDomain() }
+        }
+    }
+
+    func save(_ event: CareEvent) async throws {
+        try await persistenceService.withBackgroundContext { context in
+            let entity = CareEventEntity(context: context)
+            entity.fromDomain(event)
+            try context.save()
+        }
+    }
+}
+
+// MARK: - Entity-Domain mapping
+
 private extension PlantEntity {
     func toDomain() -> Plant? {
         guard let id, let name, let dateAdded, let speciesID else { return nil }
@@ -144,5 +239,51 @@ private extension UserProfileEntity {
         latitude = profile.latitude
         longitude = profile.longitude
         climateClassification = profile.climateClassification.rawValue
+    }
+}
+
+private extension CareScheduleEntity {
+    func toDomain() -> CareSchedule? {
+        guard let id, let plantID else { return nil }
+        return CareSchedule(
+            id: id,
+            plantID: plantID,
+            lastWatered: lastWatered,
+            lastFertilized: lastFertilized,
+            lastPruned: lastPruned,
+            lastRepotted: lastRepotted,
+            adherenceOffset: Int(adherenceOffset)
+        )
+    }
+
+    func fromDomain(_ schedule: CareSchedule) {
+        id = schedule.id
+        plantID = schedule.plantID
+        lastWatered = schedule.lastWatered
+        lastFertilized = schedule.lastFertilized
+        lastPruned = schedule.lastPruned
+        lastRepotted = schedule.lastRepotted
+        adherenceOffset = Int32(schedule.adherenceOffset)
+    }
+}
+
+private extension CareEventEntity {
+    func toDomain() -> CareEvent? {
+        guard let id, let plantID, let eventType, let timestamp else { return nil }
+        return CareEvent(
+            id: id,
+            plantID: plantID,
+            eventType: CareEventType(rawValue: eventType) ?? .watered,
+            timestamp: timestamp,
+            photoData: photoData
+        )
+    }
+
+    func fromDomain(_ event: CareEvent) {
+        id = event.id
+        plantID = event.plantID
+        eventType = event.eventType.rawValue
+        timestamp = event.timestamp
+        photoData = event.photoData
     }
 }
