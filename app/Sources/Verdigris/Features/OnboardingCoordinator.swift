@@ -13,6 +13,9 @@ final class OnboardingCoordinator {
     var currentStep: OnboardingStep = .location
     var userProfile: UserProfile?
 
+    @ObservationIgnored
+    @Dependency(\.userProfileRepository) private var profileRepository
+
     private let onboardingKey = "hasCompletedOnboarding"
 
     var hasCompletedOnboarding: Bool {
@@ -22,6 +25,13 @@ final class OnboardingCoordinator {
     func completeLocation(_ profile: UserProfile) {
         userProfile = profile
         currentStep = .addFirstPlant
+    }
+
+    func saveProfileAndComplete() async {
+        if let profile = userProfile {
+            try? await profileRepository.save(profile)
+        }
+        completeOnboarding()
     }
 
     func completeOnboarding() {

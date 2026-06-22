@@ -14,6 +14,14 @@ enum ClimateClassification: String, Sendable, Codable {
     case temperate
     case tropical
     case arid
+
+    var localizedLabel: String {
+        switch self {
+        case .temperate: String(localized: "Temperate")
+        case .tropical: String(localized: "Tropical")
+        case .arid: String(localized: "Arid")
+        }
+    }
 }
 
 /// Wraps localized common names for a plant species.

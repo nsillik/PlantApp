@@ -85,8 +85,7 @@ struct AddPlantView: View {
                             guard let plant = await viewModel.savePlant(species: species) else { return }
                             onSaved(plant)
                             dismiss()
-}
-
+                        }
                     }
                     .disabled(viewModel.isSaving)
                     .frame(maxWidth: .infinity)

@@ -24,7 +24,7 @@ enum CatalogError: Error, LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .fileNotFound: "Catalog file not found in bundle"
+        case .fileNotFound: String(localized: "Catalog file not found in bundle")
         }
     }
 }

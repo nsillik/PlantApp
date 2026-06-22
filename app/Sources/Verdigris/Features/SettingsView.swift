@@ -37,7 +37,13 @@ final class SettingsViewModel {
 
     /// Fetches the existing profile from the repository.
     func loadProfile() async {
-        currentProfile = try? await profileRepository.fetch()
+        do {
+            currentProfile = try await profileRepository.fetch()
+        } catch {
+            reportIssue("""
+              Failed to load profile: \(error.localizedDescription)
+              """)
+        }
     }
 
     /// Debounced search: waits 400ms after the last keystroke, then calls
@@ -62,7 +68,8 @@ final class SettingsViewModel {
         errorMessage = nil
         searchTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
-            guard let self, !Task.isCancelled else { return }
+            guard let self else { return }
+            guard !Task.isCancelled else { return }
             do {
                 let results = try await searchService.search(query: text)
                 guard !Task.isCancelled else { return }
@@ -102,6 +109,11 @@ final class SettingsViewModel {
         }
     }
 
+    /// Returns the climate classification label for display purposes.
+    func climateLabel(for city: City) -> String {
+        climateService.climateClassification(for: city).localizedLabel
+    }
+
     /// Persists the resolved city as the new profile and exits edit mode.
     func confirmCity() async {
         guard let city = selectedCity else { return }
@@ -136,7 +148,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading) {
                                 Text(profile.city)
                                     .font(.headline)
-                                Text(String(localized: "\(profile.climateClassification.rawValue.capitalized) climate"))
+                                Text(String(localized: "\(profile.climateClassification.localizedLabel) climate"))
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -191,6 +203,9 @@ struct SettingsView: View {
                                 VStack(alignment: .leading) {
                                     Text(city.name)
                                         .font(.headline)
+                                    Text(viewModel.climateLabel(for: city))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
 
                                 Button(String(localized: "Confirm")) {

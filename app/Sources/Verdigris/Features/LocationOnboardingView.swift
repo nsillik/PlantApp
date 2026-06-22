@@ -51,7 +51,8 @@ final class LocationOnboardingViewModel {
         errorMessage = nil
         searchTask = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(400))
-            guard let self, !Task.isCancelled else { return }
+            guard let self else { return }
+            guard !Task.isCancelled else { return }
             do {
                 let results = try await searchService.search(query: text)
                 guard !Task.isCancelled else { return }
@@ -97,7 +98,7 @@ final class LocationOnboardingViewModel {
 
     /// Returns the climate classification label for display purposes.
     func climateLabel(for city: City) -> String {
-        climateService.climateClassification(for: city).rawValue
+        climateService.climateClassification(for: city).localizedLabel
     }
 
     /// Constructs the persisted `UserProfile` from the currently selected city.
@@ -180,7 +181,7 @@ struct LocationOnboardingView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(city.name)
                         .font(.headline)
-                    Text(String(localized: "\(viewModel.climateLabel(for: city).capitalized) climate"))
+                    Text(String(localized: "\(viewModel.climateLabel(for: city)) climate"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
