@@ -26,7 +26,7 @@ struct Phase1SnapshotTests {
     func catalogSpeciesDetail() {
         let view = CatalogSpeciesDetailView(species: testSpecies, onAdd: { _ in })
         let controller = UIHostingController(rootView: view)
-        withSnapshotTesting(record: .missing) {
+        withSnapshotTesting(record: SnapshotRecord.mode) {
             assertSnapshot(of: controller, as: .image(on: .iPhone13Pro))
         }
     }
@@ -43,7 +43,7 @@ struct Phase1SnapshotTests {
         )
         let view = CareSheetView(careSheet: sheet)
         let controller = UIHostingController(rootView: view)
-        withSnapshotTesting(record: .missing) {
+        withSnapshotTesting(record: SnapshotRecord.mode) {
             assertSnapshot(of: controller, as: .image(on: .iPhone13Pro))
         }
     }
@@ -60,7 +60,7 @@ struct Phase1SnapshotTests {
         )
         let view = CareSheetView(careSheet: sheet)
         let controller = UIHostingController(rootView: view)
-        withSnapshotTesting(record: .missing) {
+        withSnapshotTesting(record: SnapshotRecord.mode) {
             assertSnapshot(of: controller, as: .image(on: .iPhone13Pro))
         }
     }
