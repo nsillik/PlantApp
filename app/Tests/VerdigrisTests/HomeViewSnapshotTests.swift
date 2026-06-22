@@ -16,7 +16,7 @@ struct HomeViewSnapshotTests {
         withDependencies {
             $0.plantRepository = MockSnapshotPlantRepository()
         } operation: {
-            withSnapshotTesting(record: .missing) {
+            withSnapshotTesting(record: SnapshotRecord.mode) {
                 assertSnapshot(of: hostingController, as: .image(on: .iPhone13Pro))
             }
         }
@@ -32,7 +32,7 @@ struct HomeViewSnapshotTests {
         withDependencies {
             $0.plantRepository = MockSnapshotPlantRepository()
         } operation: {
-            withSnapshotTesting(record: .missing) {
+            withSnapshotTesting(record: SnapshotRecord.mode) {
                 assertSnapshot(of: hostingController, as: .image(on: .iPhone13Pro))
             }
         }

@@ -38,3 +38,11 @@ jobs:
       - run: tuist install
       - run: tuist generate
       - run: tuist test
+      - name: Upload snapshot failures (for debugging)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-failures
+          path: |
+            app/Tests/VerdigrisTests/__Snapshots__/
+            app/Tests/VerdigrisTests/__Snapshots__/**/*.png
