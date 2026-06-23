@@ -141,9 +141,9 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 - Re-capture returns to camera preview
 
 ### 3.6 Integration with add-plant flow
-- [ ] Confirmed/selected species → placement fields (Phase 1.6) → save → care sheet (Phase 1.9–1.10)
-- [ ] No new add-plant code path — reuses Phase 1 flow with species pre-filled
-- [ ] After save, navigate to plant detail (not back to camera)
+- [x] Confirmed/selected species → placement fields (Phase 1.6) → save → care sheet (Phase 1.9–1.10)
+- [x] No new add-plant code path — reuses Phase 1 flow with species pre-filled
+- [x] After save, navigate to plant detail (not back to camera)
 
 **Acceptance:**
 - Camera-identified plant flows through the same placement → save → care sheet path as catalog-added plants

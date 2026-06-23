@@ -213,6 +213,7 @@ struct HomeView: View {
     @State private var hasShownNotificationPrompt = false
     @State private var showCamera = false
     @State private var cameraSpecies: PlantSpecies?
+    @State private var savedPlant: Plant?
     let onboardingCoordinator: OnboardingCoordinator
 
     init(viewModel: HomeViewModel = HomeViewModel(), onboardingCoordinator: OnboardingCoordinator) {
@@ -286,7 +287,13 @@ struct HomeView: View {
             .sheet(item: $cameraSpecies) { species in
                 AddPlantView(species: species) { plant in
                     cameraSpecies = nil
+                    savedPlant = plant
                     Task { await viewModel.loadAll() }
+                }
+            }
+            .sheet(item: $savedPlant) { plant in
+                NavigationStack {
+                    PlantDetailView(plant: plant)
                 }
             }
             .alert(String(localized: "Enable Notifications?"), isPresented: $showNotificationAlert) {
