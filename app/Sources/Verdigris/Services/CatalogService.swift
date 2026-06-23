@@ -1,3 +1,5 @@
+import CoreGraphics
+import CoreVideo
 import Foundation
 
 protocol CatalogService: Sendable {
