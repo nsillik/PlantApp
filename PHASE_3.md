@@ -103,12 +103,12 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 
 ### 3.3 Species classification (on capture)
 *Blocked by Workstream B2.*
-- [ ] On shutter tap: capture the current frame (`AVCapturePhotoOutput` or frame extraction)
-- [ ] Crop to the detected bounding box (if detection is active) or use full frame
-- [ ] Run B2 classifier model on the captured image (Neural Engine)
-- [ ] Show loading state (detected shape still highlighted, spinner)
-- [ ] Map classifier output to species (match classifier labels to catalog species IDs)
-- [ ] Return top result + confidence score + alternatives
+- [x] On shutter tap: capture the current frame (`AVCapturePhotoOutput` or frame extraction)
+- [x] Crop to the detected bounding box (if detection is active) or use full frame
+- [ ] Run B2 classifier model on the captured image (Neural Engine) *(blocked: no B2 model yet)*
+- [x] Show loading state (detected shape still highlighted, spinner)
+- [x] Map classifier output to species (match classifier labels to catalog species IDs)
+- [x] Return top result + confidence score + alternatives
 
 **Acceptance:**
 - Tapping shutter captures and classifies within ~2 seconds on Neural Engine
