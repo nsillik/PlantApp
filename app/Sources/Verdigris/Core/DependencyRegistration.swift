@@ -46,6 +46,11 @@ extension DependencyValues {
         get { self[NotificationSchedulingKey.self] }
         set { self[NotificationSchedulingKey.self] = newValue }
     }
+
+    var plantIdentificationService: PlantIdentificationService {
+        get { self[PlantIdentificationServiceKey.self] }
+        set { self[PlantIdentificationServiceKey.self] = newValue }
+    }
 }
 
 private enum PersistenceServiceKey: DependencyKey {
@@ -214,4 +219,9 @@ private struct UnimplementedNotificationScheduler: NotificationScheduling {
     func removeAll() {
         reportIssue("Unimplemented")
     }
+}
+
+private enum PlantIdentificationServiceKey: DependencyKey {
+    static let liveValue: PlantIdentificationService = CoreMLPlantIdentificationService()
+    static let testValue: PlantIdentificationService = MockPlantIdentificationService()
 }

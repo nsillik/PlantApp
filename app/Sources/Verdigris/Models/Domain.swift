@@ -208,6 +208,29 @@ enum HumidityPlacement: String, Sendable, Codable, CaseIterable {
     }
 }
 
+/// Raw output from a CoreML classifier, before mapping to catalog species.
+struct RawClassificationResult: Sendable, Equatable {
+    let topLabel: String
+    let confidence: Double
+    let alternatives: [AlternativeLabel]
+}
+
+struct AlternativeLabel: Sendable, Equatable {
+    let label: String
+    let confidence: Double
+}
+
+/// A detected plant region in a camera frame, in normalized (0–1) coordinates.
+struct DetectedBoundingBox: Sendable, Equatable {
+    let normalizedRect: CGRect
+    let confidence: Double
+}
+
+/// Result of running plant detection on a camera frame.
+struct DetectionResult: Sendable, Equatable {
+    let boundingBoxes: [DetectedBoundingBox]
+}
+
 /// A logged care action performed on a plant.
 struct CareEvent: Identifiable, Sendable, Codable {
     let id: UUID
