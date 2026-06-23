@@ -179,15 +179,15 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 
 ## Phase 3 Exit Criteria
 
-- [ ] Camera preview shows live viewfinder with plant detection bounding box at camera framerate
-- [ ] Tapping shutter captures and classifies within ~2 seconds on Neural Engine
-- [ ] Result shows species name + confidence bar + alternatives
-- [ ] User can confirm species or override via catalog search
-- [ ] Confirmed species flows into existing add-plant → placement → care sheet path
-- [ ] Works fully offline (no network for ID)
-- [ ] Graceful fallback to catalog search when models fail or are unavailable
-- [ ] Both CoreML models (B1, B2) are bundled, load, and run on Neural Engine
-- [ ] Snapshot tests pass for result card states (success, low confidence, error) and camera permission denied state — each driven by mocking `PlantIdentificationService` via `withDependencies`, no live camera or CoreML required
-- [ ] All user-facing strings localized (EN + ES)
+- [x] Camera preview shows live viewfinder with plant detection bounding box at camera framerate
+- [ ] Tapping shutter captures and classifies within ~2 seconds on Neural Engine *(blocked: no B2 model)*
+- [x] Result shows species name + confidence bar + alternatives
+- [x] User can confirm species or override via catalog search
+- [x] Confirmed species flows into existing add-plant → placement → care sheet path
+- [ ] Works fully offline (no network for ID) *(blocked: no B2 model)*
+- [x] Graceful fallback to catalog search when models fail or are unavailable
+- [ ] Both CoreML models (B1, B2) are bundled, load, and run on Neural Engine *(blocked: Workstream B)*
+- [x] Snapshot tests pass for result card states (success, low confidence, error) and camera permission denied state — each driven by mocking `PlantIdentificationService` via `withDependencies`, no live camera or CoreML required
+- [x] All user-facing strings localized (EN + ES)
 
 → **MVP candidate B (full):** This is the portfolio centerpiece.

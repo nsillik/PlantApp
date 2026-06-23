@@ -69,6 +69,9 @@
         }
       }
     },
+    "%@%%" : {
+
+    },
     "Add your first plant to get started." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -103,23 +106,6 @@
         }
       }
     },
-    "Also match" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Also match"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "También coincide"
-          }
-        }
-      }
-    },
     "All Caught Up" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -133,6 +119,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Todo al día"
+          }
+        }
+      }
+    },
+    "Also match" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also match"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También coincide"
           }
         }
       }
@@ -201,6 +204,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Historial de cuidados"
+          }
+        }
+      }
+    },
+    "Classification failed. Try again or search the catalog." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classification failed. Try again or search the catalog."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clasificación falló. Intenta de nuevo o busca en el catálogo."
           }
         }
       }
@@ -409,23 +429,6 @@
         }
       }
     },
-    "Classification failed. Try again or search the catalog." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Classification failed. Try again or search the catalog."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La clasificación falló. Intenta de nuevo o busca en el catálogo."
-          }
-        }
-      }
-    },
     "No tasks due right now." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -439,40 +442,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No hay tareas pendientes ahora."
-          }
-        }
-      }
-    },
-    "Plant identification is unavailable right now. Search the catalog instead." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plant identification is unavailable right now. Search the catalog instead."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La identificación de plantas no está disponible. Busca en el catálogo."
-          }
-        }
-      }
-    },
-    "We couldn't match this result to our catalog." : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We couldn't match this result to our catalog."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pudimos encontrar este resultado en nuestro catálogo."
           }
         }
       }
@@ -507,6 +476,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Foto adjunta"
+          }
+        }
+      }
+    },
+    "Plant identification is unavailable right now. Search the catalog instead." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plant identification is unavailable right now. Search the catalog instead."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La identificación de plantas no está disponible. Busca en el catálogo."
           }
         }
       }
@@ -647,23 +633,6 @@
         }
       }
     },
-    "We're not completely sure — tap Search to pick the right species" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We're not completely sure \u2014 tap Search to pick the right species"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No estamos completamente seguros \u2014 toca Buscar para elegir la especie correcta"
-          }
-        }
-      }
-    },
     "Watered" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -694,6 +663,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Riego"
+          }
+        }
+      }
+    },
+    "We couldn't match this result to our catalog." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't match this result to our catalog."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos encontrar este resultado en nuestro catálogo."
+          }
+        }
+      }
+    },
+    "We're not completely sure — tap Search to pick the right species" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We're not completely sure — tap Search to pick the right species"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No estamos completamente seguros — toca Buscar para elegir la especie correcta"
           }
         }
       }
