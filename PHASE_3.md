@@ -151,11 +151,11 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 - User lands on plant detail after saving
 
 ### 3.7 Error handling + edge cases
-- [ ] Model not available (not in bundle / failed to load) → camera screen shows "ID unavailable, search catalog instead"
-- [ ] Classification fails (model error) → graceful message + catalog search fallback
-- [ ] Camera error (hardware unavailable) → message + cancel
-- [ ] No plant detected in frame (detector finds nothing) → "Point at a plant" hint, no bounding box
-- [ ] Multiple plants in frame → detect all, use the largest/most-central for classification
+- [x] Model not available (not in bundle / failed to load) → camera screen shows "ID unavailable, search catalog instead"
+- [x] Classification fails (model error) → graceful message + catalog search fallback
+- [x] Camera error (hardware unavailable) → message + cancel
+- [x] No plant detected in frame (detector finds nothing) → "Point at a plant" hint, no bounding box
+- [x] Multiple plants in frame → detect all, use the largest/most-central for classification
 
 **Acceptance:**
 - Every error path has a clear user message and a path forward

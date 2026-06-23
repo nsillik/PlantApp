@@ -65,6 +65,18 @@ final class CameraViewModel {
                 resolvedSpecies = nil
                 errorMessage = String(localized: "We couldn't match this result to our catalog.")
             }
+        } catch let error as PlantIdentificationError {
+            cameraState = .running
+            classificationResult = nil
+            resolvedSpecies = nil
+            switch error {
+            case .modelNotAvailable:
+                errorMessage = String(localized: "Plant identification is unavailable right now. Search the catalog instead.")
+            case .classificationFailed:
+                errorMessage = String(localized: "Classification failed. Try again or search the catalog.")
+            case .unresolvedLabel:
+                errorMessage = String(localized: "We couldn't match this result to our catalog.")
+            }
         } catch {
             cameraState = .running
             errorMessage = String(localized: "Classification failed. Try again or search the catalog.")
@@ -75,8 +87,24 @@ final class CameraViewModel {
 
     private func bestDetectionBox() -> DetectedBoundingBox? {
         detectionResult.boundingBoxes.max { first, second in
-            let scoreFirst = first.normalizedRect.width * first.normalizedRect.height * first.confidence
-            let scoreSecond = second.normalizedRect.width * second.normalizedRect.height * second.confidence
+            let areaFirst = first.normalizedRect.width * first.normalizedRect.height
+            let areaSecond = second.normalizedRect.width * second.normalizedRect.height
+
+            let centerFirst = CGPoint(
+                x: first.normalizedRect.midX - 0.5,
+                y: first.normalizedRect.midY - 0.5
+            )
+            let centerSecond = CGPoint(
+                x: second.normalizedRect.midX - 0.5,
+                y: second.normalizedRect.midY - 0.5
+            )
+            let distFirst = sqrt(centerFirst.x * centerFirst.x + centerFirst.y * centerFirst.y)
+            let distSecond = sqrt(centerSecond.x * centerSecond.x + centerSecond.y * centerSecond.y)
+            let centralityFirst = 1 - distFirst / 0.7071
+            let centralitySecond = 1 - distSecond / 0.7071
+
+            let scoreFirst = areaFirst * first.confidence * max(centralityFirst, 0.1)
+            let scoreSecond = areaSecond * second.confidence * max(centralitySecond, 0.1)
             return scoreFirst < scoreSecond
         }
     }

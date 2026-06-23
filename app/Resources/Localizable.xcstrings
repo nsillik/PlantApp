@@ -409,6 +409,23 @@
         }
       }
     },
+    "Classification failed. Try again or search the catalog." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Classification failed. Try again or search the catalog."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La clasificación falló. Intenta de nuevo o busca en el catálogo."
+          }
+        }
+      }
+    },
     "No tasks due right now." : {
       "extractionState" : "stale",
       "localizations" : {
@@ -422,6 +439,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No hay tareas pendientes ahora."
+          }
+        }
+      }
+    },
+    "Plant identification is unavailable right now. Search the catalog instead." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plant identification is unavailable right now. Search the catalog instead."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La identificación de plantas no está disponible. Busca en el catálogo."
+          }
+        }
+      }
+    },
+    "We couldn't match this result to our catalog." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We couldn't match this result to our catalog."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pudimos encontrar este resultado en nuestro catálogo."
           }
         }
       }
