@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreVideo
 import Dependencies
 import Foundation
 
@@ -24,6 +25,7 @@ final class CameraViewModel {
     var classificationResult: RawClassificationResult?
     var resolvedSpecies: PlantSpecies?
     var errorMessage: String?
+    var isProcessingFrame = false
 
     @ObservationIgnored
     @Dependency(\.plantIdentificationService) private var identificationService
@@ -34,6 +36,16 @@ final class CameraViewModel {
 
     func loadCatalog() async {
         catalog = (try? await catalogService.loadCatalog()) ?? []
+    }
+
+    func updateDetection(_ result: DetectionResult) {
+        guard cameraState == .running else { return }
+        detectionResult = result
+        isProcessingFrame = false
+    }
+
+    nonisolated func detectPlant(in pixelBuffer: CVPixelBuffer) async -> DetectionResult {
+        await identificationService.detectPlant(in: pixelBuffer)
     }
 
     func captureAndClassify(image: CGImage) async {

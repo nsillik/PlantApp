@@ -1,4 +1,5 @@
-import AVFoundation
+@preconcurrency import AVFoundation
+@preconcurrency import CoreVideo
 import SwiftUI
 import UIKit
 
@@ -14,7 +15,7 @@ struct PlantCameraView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: CameraViewController, context: Context) {}
 }
 
-final class CameraViewController: UIViewController {
+final class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let viewModel: CameraViewModel
     private let onDismiss: () -> Void
     private let onSpeciesConfirmed: (PlantSpecies) -> Void
@@ -124,7 +125,7 @@ final class CameraViewController: UIViewController {
             label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 40),
             label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -40),
             settingsButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            settingsButton.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 20),
+            settingsButton.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 20)
         ])
     }
 
@@ -148,6 +149,7 @@ final class CameraViewController: UIViewController {
 
             self.videoOutput.alwaysDiscardsLateVideoFrames = true
             self.videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
+            self.videoOutput.setSampleBufferDelegate(self, queue: self.sessionQueue)
             guard session.canAddOutput(self.videoOutput) else { return }
             session.addOutput(self.videoOutput)
 
@@ -185,7 +187,7 @@ final class CameraViewController: UIViewController {
             shutterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             shutterButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -40),
             cancelButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
+            cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10)
         ])
     }
 
@@ -217,6 +219,21 @@ final class CameraViewController: UIViewController {
     @objc private func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
+    }
+
+    nonisolated func captureOutput(
+        _ output: AVCaptureOutput,
+        didOutput sampleBuffer: CMSampleBuffer,
+        from connection: AVCaptureConnection
+    ) {
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        Task { @MainActor in
+            guard !viewModel.isProcessingFrame else { return }
+            guard viewModel.cameraState == .running else { return }
+            viewModel.isProcessingFrame = true
+            let result = await viewModel.detectPlant(in: pixelBuffer)
+            viewModel.updateDetection(result)
+        }
     }
 }
 
