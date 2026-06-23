@@ -1,0 +1,210 @@
+import SwiftUI
+
+struct CameraView: View {
+    @State private var viewModel = CameraViewModel()
+    @State private var showCatalogSearch = false
+    let onSpeciesConfirmed: (PlantSpecies) -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            PlantCameraView(
+                viewModel: viewModel,
+                onDismiss: onDismiss,
+                onSpeciesConfirmed: { species in
+                    onSpeciesConfirmed(species)
+                }
+            )
+            .ignoresSafeArea()
+
+            if viewModel.cameraState == .classifying {
+                classifyingOverlay
+            } else if let error = viewModel.errorMessage {
+                errorOverlay(message: error)
+            } else if let result = viewModel.classificationResult, let species = viewModel.resolvedSpecies {
+                resultCardOverlay(result: result, species: species)
+            } else if viewModel.cameraState == .running || viewModel.cameraState == .idle {
+                hintOverlay
+            }
+        }
+        .task {
+            await viewModel.loadCatalog()
+        }
+        .sheet(isPresented: $showCatalogSearch) {
+            catalogSearchSheet
+        }
+    }
+
+    private var classifyingOverlay: some View {
+        VStack {
+            Spacer()
+            ProgressView(String(localized: "Identifying plant…"))
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            Spacer().frame(height: 120)
+        }
+    }
+
+    private var hintOverlay: some View {
+        VStack {
+            Spacer()
+            Text(String(localized: "Point your camera at a plant"))
+                .font(.headline)
+                .foregroundStyle(.white)
+                .padding()
+                .background(.black.opacity(0.4))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.bottom, 120)
+        }
+    }
+
+    private func errorOverlay(message: String) -> some View {
+        VStack {
+            Spacer()
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle")
+                    .font(.largeTitle)
+                    .foregroundStyle(.orange)
+                Text(message)
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                Button(String(localized: "Search Catalog")) {
+                    showCatalogSearch = true
+                }
+                .buttonStyle(.borderedProminent)
+                Button(String(localized: "Try Again")) {
+                    viewModel.reset()
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .padding()
+            Spacer().frame(height: 120)
+        }
+    }
+
+    private func resultCardOverlay(result: RawClassificationResult, species: PlantSpecies) -> some View {
+        VStack {
+            Spacer()
+            CameraResultCard(
+                species: species,
+                result: result,
+                onConfirm: {
+                    if let confirmed = viewModel.confirmSpecies() {
+                        onSpeciesConfirmed(confirmed)
+                    }
+                },
+                onSearchCatalog: {
+                    showCatalogSearch = true
+                }
+            )
+            .padding(.horizontal)
+            .padding(.bottom, 80)
+        }
+    }
+
+    private var catalogSearchSheet: some View {
+        NavigationStack {
+            CatalogBrowseView { species, _ in
+                onSpeciesConfirmed(species)
+                showCatalogSearch = false
+            }
+        }
+    }
+}
+
+struct CameraResultCard: View {
+    let species: PlantSpecies
+    let result: RawClassificationResult
+    let onConfirm: () -> Void
+    let onSearchCatalog: () -> Void
+
+    private var isLowConfidence: Bool {
+        result.confidence < 0.6
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(species.name.localizedName)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+
+            confidenceBar
+
+            if isLowConfidence {
+                Text("We're not completely sure — tap Search to pick the right species")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            HStack(spacing: 12) {
+                Button(String(localized: "Confirm")) {
+                    onConfirm()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button(String(localized: "Search Catalog")) {
+                    onSearchCatalog()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+
+            if !result.alternatives.isEmpty {
+                alternativeChips
+            }
+        }
+        .padding()
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(radius: 8)
+    }
+
+    private var confidenceBar: some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(String(localized: "Confidence"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int(result.confidence * 100))%")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(isLowConfidence ? .orange : .green)
+            }
+            ProgressView(value: result.confidence)
+                .tint(isLowConfidence ? .orange : .green)
+        }
+    }
+
+    private var alternativeChips: some View {
+        VStack(spacing: 4) {
+            Text(String(localized: "Also match"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                ForEach(result.alternatives, id: \.label) { alt in
+                    Button {
+                        // Tapped alternative — we don't currently resolve these to species
+                        // since resolveModelLabel only processes topLabel
+                    } label: {
+                        Text(alt.label.replacingOccurrences(of: "_", with: " "))
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(.secondary.opacity(0.2))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}

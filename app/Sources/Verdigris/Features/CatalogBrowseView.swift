@@ -37,6 +37,7 @@ final class CatalogBrowseViewModel {
 struct CatalogBrowseView: View {
     @State private var viewModel = CatalogBrowseViewModel()
     @State private var addSpecies: PlantSpecies?
+    @State private var showCamera = false
     let onAdd: ((PlantSpecies, Plant) -> Void)?
 
     init(onAdd: ((PlantSpecies, Plant) -> Void)? = nil) {
@@ -74,12 +75,32 @@ struct CatalogBrowseView: View {
             }
             .navigationTitle(String(localized: "Plant Catalog"))
             .searchable(text: $viewModel.searchText, prompt: String(localized: "Search plants…"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showCamera = true
+                    } label: {
+                        Image(systemName: "camera")
+                    }
+                }
+            }
         }
         .sheet(item: $addSpecies) { species in
             AddPlantView(species: species) { plant in
                 onAdd?(species, plant)
                 addSpecies = nil
             }
+        }
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraView(
+                onSpeciesConfirmed: { species in
+                    showCamera = false
+                    addSpecies = species
+                },
+                onDismiss: {
+                    showCamera = false
+                }
+            )
         }
         .task {
             await viewModel.loadCatalog()

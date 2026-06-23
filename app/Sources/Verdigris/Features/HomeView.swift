@@ -211,6 +211,8 @@ struct HomeView: View {
     @State private var showSettings = false
     @State private var showNotificationAlert = false
     @State private var hasShownNotificationPrompt = false
+    @State private var showCamera = false
+    @State private var cameraSpecies: PlantSpecies?
     let onboardingCoordinator: OnboardingCoordinator
 
     init(viewModel: HomeViewModel = HomeViewModel(), onboardingCoordinator: OnboardingCoordinator) {
@@ -241,7 +243,12 @@ struct HomeView: View {
             }
             .navigationTitle(String(localized: "My Plants"))
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        showCamera = true
+                    } label: {
+                        Image(systemName: "camera")
+                    }
                     Button(String(localized: "Add")) {
                         viewModel.showCatalog = true
                     }
@@ -263,6 +270,23 @@ struct HomeView: View {
             .sheet(isPresented: $showSettings) {
                 SettingsView {
                     onboardingCoordinator.resetOnboarding()
+                }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraView(
+                    onSpeciesConfirmed: { species in
+                        cameraSpecies = species
+                        showCamera = false
+                    },
+                    onDismiss: {
+                        showCamera = false
+                    }
+                )
+            }
+            .sheet(item: $cameraSpecies) { species in
+                AddPlantView(species: species) { plant in
+                    cameraSpecies = nil
+                    Task { await viewModel.loadAll() }
                 }
             }
             .alert(String(localized: "Enable Notifications?"), isPresented: $showNotificationAlert) {
