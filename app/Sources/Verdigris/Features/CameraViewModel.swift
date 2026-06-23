@@ -99,6 +99,12 @@ final class CameraViewModel {
         resolvedSpecies
     }
 
+    func selectAlternative(_ label: String) {
+        if let species = identificationService.resolveModelLabel(label) {
+            resolvedSpecies = species
+        }
+    }
+
     func reset() {
         cameraState = .running
         detectionResult = DetectionResult(boundingBoxes: [])

@@ -117,11 +117,11 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 - Handles model failure gracefully (→ fallback to catalog search, step 3.5)
 
 ### 3.4 Classification result UI
-- [ ] Result card: species name, confidence bar, "Is this right?" prompt
-- [ ] "Confirm" button → proceeds to add-plant flow (step 3.6)
-- [ ] "Not quite" / "Search catalog" button → catalog search (step 3.5)
-- [ ] Low-confidence state: if confidence < threshold (e.g., 0.6), nudge toward catalog search
-- [ ] Show top alternatives as quick-select chips
+- [x] Result card: species name, confidence bar, "Is this right?" prompt
+- [x] "Confirm" button → proceeds to add-plant flow (step 3.6)
+- [x] "Not quite" / "Search catalog" button → catalog search (step 3.5)
+- [x] Low-confidence state: if confidence < threshold (e.g., 0.6), nudge toward catalog search
+- [x] Show top alternatives as quick-select chips
 
 **Acceptance:**
 - Result card displays species + confidence clearly

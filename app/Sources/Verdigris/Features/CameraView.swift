@@ -123,6 +123,9 @@ struct CameraView: View {
                 },
                 onSearchCatalog: {
                     showCatalogSearch = true
+                },
+                onSelectAlternative: { label in
+                    viewModel.selectAlternative(label)
                 }
             )
             .padding(.horizontal)
@@ -145,6 +148,7 @@ struct CameraResultCard: View {
     let result: RawClassificationResult
     let onConfirm: () -> Void
     let onSearchCatalog: () -> Void
+    let onSelectAlternative: (String) -> Void
 
     private var isLowConfidence: Bool {
         result.confidence < 0.6
@@ -160,8 +164,12 @@ struct CameraResultCard: View {
 
             confidenceBar
 
+            Text(String(localized: "Is this right?"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
             if isLowConfidence {
-                Text("We're not completely sure — tap Search to pick the right species")
+                Text(String(localized: "We're not completely sure — tap Search to pick the right species"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -216,8 +224,7 @@ struct CameraResultCard: View {
             HStack(spacing: 8) {
                 ForEach(result.alternatives, id: \.label) { alt in
                     Button {
-                        // Tapped alternative — we don't currently resolve these to species
-                        // since resolveModelLabel only processes topLabel
+                        onSelectAlternative(alt.label)
                     } label: {
                         Text(alt.label.replacingOccurrences(of: "_", with: " "))
                             .font(.caption)

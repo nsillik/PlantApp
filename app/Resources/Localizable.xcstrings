@@ -103,6 +103,23 @@
         }
       }
     },
+    "Also match" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Also match"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "También coincide"
+          }
+        }
+      }
+    },
     "All Caught Up" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -324,6 +341,23 @@
         }
       }
     },
+    "Is this right?" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Is this right?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Es correcto?"
+          }
+        }
+      }
+    },
     "Loading plants…" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -541,6 +575,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Verdigris"
+          }
+        }
+      }
+    },
+    "We're not completely sure — tap Search to pick the right species" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We're not completely sure \u2014 tap Search to pick the right species"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No estamos completamente seguros \u2014 toca Buscar para elegir la especie correcta"
           }
         }
       }
