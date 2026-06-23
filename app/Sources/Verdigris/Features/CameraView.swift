@@ -86,26 +86,11 @@ struct CameraView: View {
     private func errorOverlay(message: String) -> some View {
         VStack {
             Spacer()
-            VStack(spacing: 16) {
-                Image(systemName: "exclamationmark.triangle")
-                    .font(.largeTitle)
-                    .foregroundStyle(.orange)
-                Text(message)
-                    .font(.body)
-                    .multilineTextAlignment(.center)
-                Button(String(localized: "Search Catalog")) {
-                    showCatalogSearch = true
-                }
-                .buttonStyle(.borderedProminent)
-                Button(String(localized: "Try Again")) {
-                    viewModel.reset()
-                }
-                .buttonStyle(.bordered)
-            }
-            .padding()
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .padding()
+            CameraErrorOverlay(
+                message: message,
+                onSearchCatalog: { showCatalogSearch = true },
+                onTryAgain: { viewModel.reset() }
+            )
             Spacer().frame(height: 120)
         }
     }
@@ -147,6 +132,53 @@ struct CameraView: View {
                 }
             }
         }
+    }
+}
+
+struct CameraErrorOverlay: View {
+    let message: String
+    let onSearchCatalog: () -> Void
+    let onTryAgain: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.body)
+                .multilineTextAlignment(.center)
+            Button(String(localized: "Search Catalog")) {
+                onSearchCatalog()
+            }
+            .buttonStyle(.borderedProminent)
+            Button(String(localized: "Try Again")) {
+                onTryAgain()
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding()
+    }
+}
+
+struct CameraPermissionDeniedView: View {
+    let onOpenSettings: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Text(String(localized: "Camera access is needed to identify plants."))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+
+            Button(String(localized: "Open Settings")) {
+                onOpenSettings()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
     }
 }
 
