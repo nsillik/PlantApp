@@ -139,6 +139,13 @@ struct CameraView: View {
                 onSpeciesConfirmed(species)
                 showCatalogSearch = false
             }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(String(localized: "Back to Camera")) {
+                        showCatalogSearch = false
+                    }
+                }
+            }
         }
     }
 }

@@ -154,6 +154,23 @@
         }
       }
     },
+    "Back to Camera" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back to Camera"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a la cámara"
+          }
+        }
+      }
+    },
     "Care Actions" : {
       "extractionState" : "stale",
       "localizations" : {
