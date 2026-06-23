@@ -130,10 +130,10 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 - Alternative species are selectable in one tap
 
 ### 3.5 Species override / catalog search
-- [ ] Search interface (reuses catalog search from Phase 1.5)
-- [ ] User searches by common or scientific name
-- [ ] Selecting a species proceeds to add-plant flow (step 3.6)
-- [ ] "Back to camera" option to re-capture
+- [x] Search interface (reuses catalog search from Phase 1.5)
+- [x] User searches by common or scientific name
+- [x] Selecting a species proceeds to add-plant flow (step 3.6)
+- [x] "Back to camera" option to re-capture
 
 **Acceptance:**
 - User can search and select the correct species from the full catalog
