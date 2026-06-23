@@ -52,8 +52,10 @@ final class CameraViewModel {
         cameraState = .classifying
         errorMessage = nil
 
+        let imageToClassify = cropToBestDetection(image) ?? image
+
         do {
-            let result = try await identificationService.classify(image: image)
+            let result = try await identificationService.classify(image: imageToClassify)
             classificationResult = result
             cameraState = .running
 
@@ -69,6 +71,28 @@ final class CameraViewModel {
             classificationResult = nil
             resolvedSpecies = nil
         }
+    }
+
+    private func bestDetectionBox() -> DetectedBoundingBox? {
+        detectionResult.boundingBoxes.max { first, second in
+            let scoreFirst = first.normalizedRect.width * first.normalizedRect.height * first.confidence
+            let scoreSecond = second.normalizedRect.width * second.normalizedRect.height * second.confidence
+            return scoreFirst < scoreSecond
+        }
+    }
+
+    private func cropToBestDetection(_ image: CGImage) -> CGImage? {
+        guard let box = bestDetectionBox() else { return nil }
+        let width = CGFloat(image.width)
+        let height = CGFloat(image.height)
+        let rect = box.normalizedRect
+        let crop = CGRect(
+            x: rect.origin.x * width,
+            y: (1 - rect.origin.y - rect.height) * height,
+            width: rect.width * width,
+            height: rect.height * height
+        )
+        return image.cropping(to: crop)
     }
 
     func confirmSpecies() -> PlantSpecies? {
