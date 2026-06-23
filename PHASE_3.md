@@ -18,18 +18,74 @@ If Workstream B is not complete, steps 3.2 and 3.3 are blocked. Steps 3.1, 3.4�
 
 ---
 
+## Architecture & Design
+
+### PlantIdentificationService
+
+Injected via `@Dependency(\.plantIdentification)`. Mock implementations are used during development until Workstream B completes.
+
+```swift
+protocol PlantIdentificationService: Sendable {
+    func detectPlant(in pixelBuffer: CVPixelBuffer) async -> DetectionResult
+    func classify(image: CGImage) async -> ClassificationResult
+}
+```
+
+### Domain Models
+
+```swift
+struct DetectionResult: Sendable, Equatable {
+    let boundingBox: CGRect
+    let confidence: Double
+}
+
+struct ClassificationResult: Sendable, Equatable {
+    let topMatch: PlantSpecies
+    let confidence: Double
+    let alternatives: [(species: PlantSpecies, confidence: Double)]
+}
+```
+
+### Label-to-Catalog Mapping
+
+A `model-labels.json` file is bundled alongside the `.mlmodelc`:
+
+```json
+{
+  "labels": [
+    { "modelLabel": "monstera_deliciosa", "catalogID": "A1B2C3D4-..." },
+    { "modelLabel": "ficus_lyrata", "catalogID": "E5F6G7H8-..." }
+  ]
+}
+```
+
+A pure function `resolveModelLabel(_:) -> PlantSpecies?` on the service protocol handles mapping model output labels to catalog species IDs. This is testable in isolation and decouples CoreML invocation from catalog resolution.
+
+### CameraViewModel
+
+`CameraViewModel` is `@Observable` and manages camera session lifecycle, permission state, detection pipeline, and classification lifecycle. It injects `@Dependency(\.plantIdentification)`.
+
+### CameraIdentificationView vs. CameraCaptureView
+
+Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView` from Phase 1 is a general-purpose photo capture utility and is not reused — the identification view needs real-time Vision overlays, detection state, and classification result handling that differ from the simple capture use case.
+
+---
+
 ## Steps
 
 ### 3.1 Camera permission + AVFoundation setup
-- [ ] Add `NSCameraUsageDescription` to Info.plist
-- [ ] Implement camera capture session (`AVCaptureSession`, photo input, video preview)
-- [ ] Camera permission flow: request on first camera use, handle denied state
-- [ ] Camera UI: full-screen preview, shutter button, cancel button
+- [x] Add `NSCameraUsageDescription` to Info.plist (English + Spanish)
+- [x] Add camera button to `AddPlantView` → presents `CameraIdentificationView`; also available in `.addFirstPlant` flow
+- [x] Implement `CameraViewModel` (`@Observable`) managing session lifecycle, permission state, and capture
+- [x] Implement camera capture session (`AVCaptureSession`, photo input, video preview)
+- [x] Camera permission flow: request on first camera use, handle denied state
+- [x] Camera UI: full-screen preview, shutter button, cancel button
 
 **Acceptance:**
 - Camera preview renders in-app at full frame rate
 - Permission flow works (request → grant → preview; deny → explanatory state with link to settings)
 - Shutter button is visible and tappable
+- Camera can be launched from `AddPlantView` and the `.addFirstPlant` flow
 
 ### 3.2 Real-time plant detection (viewfinder)
 *Blocked by Workstream B1.*
@@ -106,7 +162,7 @@ If Workstream B is not complete, steps 3.2 and 3.3 are blocked. Steps 3.1, 3.4�
 - User is never stuck with a blank screen or unhandled error
 - Catalog search is always available as a fallback
 
-### 3.8 Workstream B integration verification
+### 3.8 (Post-Workstream B) Model integration verification
 - [ ] B1 detector model compiled to `.mlmodelc` and added to app bundle
 - [ ] B2 classifier model compiled to `.mlmodelc` and added to app bundle
 - [ ] Both models load without errors at runtime
@@ -131,7 +187,7 @@ If Workstream B is not complete, steps 3.2 and 3.3 are blocked. Steps 3.1, 3.4�
 - [ ] Works fully offline (no network for ID)
 - [ ] Graceful fallback to catalog search when models fail or are unavailable
 - [ ] Both CoreML models (B1, B2) are bundled, load, and run on Neural Engine
-- [ ] Snapshot tests pass for: result card (success, low confidence, error), camera permission denied state
+- [ ] Snapshot tests pass for result card states (success, low confidence, error) and camera permission denied state — each driven by mocking `PlantIdentificationService` via `withDependencies`, no live camera or CoreML required
 - [ ] All user-facing strings localized (EN + ES)
 
 → **MVP candidate B (full):** This is the portfolio centerpiece.

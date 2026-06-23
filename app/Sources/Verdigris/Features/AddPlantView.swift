@@ -42,10 +42,11 @@ final class AddPlantViewModel {
 }
 
 struct AddPlantView: View {
-    let species: PlantSpecies
+    @State var species: PlantSpecies
     let onSaved: (Plant) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = AddPlantViewModel()
+    @State private var showCamera = false
 
     var body: some View {
         NavigationStack {
@@ -92,6 +93,26 @@ struct AddPlantView: View {
                 }
             }
             .navigationTitle(String(localized: "Add \(species.name.localizedName)"))
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showCamera = true
+                    } label: {
+                        Image(systemName: "camera")
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showCamera) {
+                CameraView(
+                    onSpeciesConfirmed: { identifiedSpecies in
+                        species = identifiedSpecies
+                        showCamera = false
+                    },
+                    onDismiss: {
+                        showCamera = false
+                    }
+                )
+            }
         }
     }
 }
