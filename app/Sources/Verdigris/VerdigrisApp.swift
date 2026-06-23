@@ -30,6 +30,8 @@ struct VerdigrisApp: App {
 struct OnboardingRootView: View {
     @State var coordinator: OnboardingCoordinator
     @State private var showCatalog = false
+    @State private var showCamera = false
+    @State private var cameraSpecies: PlantSpecies?
 
     var body: some View {
         Group {
@@ -52,11 +54,34 @@ struct OnboardingRootView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
+
+                    Button(String(localized: "Identify with Camera")) {
+                        showCamera = true
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
                 }
                 .padding()
                 .sheet(isPresented: $showCatalog) {
                     CatalogBrowseView { _, _ in
                         showCatalog = false
+                        Task { await coordinator.saveProfileAndComplete() }
+                    }
+                }
+                .fullScreenCover(isPresented: $showCamera) {
+                    CameraView(
+                        onSpeciesConfirmed: { species in
+                            cameraSpecies = species
+                            showCamera = false
+                        },
+                        onDismiss: {
+                            showCamera = false
+                        }
+                    )
+                }
+                .sheet(item: $cameraSpecies) { species in
+                    AddPlantView(species: species) { plant in
+                        cameraSpecies = nil
                         Task { await coordinator.saveProfileAndComplete() }
                     }
                 }

@@ -1,3 +1,4 @@
+import CoreGraphics
 import Dependencies
 import Foundation
 
@@ -42,6 +43,7 @@ final class CameraViewModel {
         do {
             let result = try await identificationService.classify(image: image)
             classificationResult = result
+            cameraState = .running
 
             if let species = identificationService.resolveModelLabel(result.topLabel) {
                 resolvedSpecies = species
@@ -50,6 +52,7 @@ final class CameraViewModel {
                 errorMessage = String(localized: "We couldn't match this result to our catalog.")
             }
         } catch {
+            cameraState = .running
             errorMessage = String(localized: "Classification failed. Try again or search the catalog.")
             classificationResult = nil
             resolvedSpecies = nil
