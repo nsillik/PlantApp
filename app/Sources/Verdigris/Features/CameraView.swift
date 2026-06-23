@@ -1,5 +1,14 @@
 import SwiftUI
 
+private func normalizedToView(_ rect: CGRect, in size: CGSize) -> CGRect {
+    CGRect(
+        x: rect.origin.x * size.width,
+        y: (1 - rect.origin.y - rect.height) * size.height,
+        width: rect.width * size.width,
+        height: rect.height * size.height
+    )
+}
+
 struct CameraView: View {
     @State private var viewModel = CameraViewModel()
     @State private var showCatalogSearch = false
@@ -16,6 +25,8 @@ struct CameraView: View {
                 }
             )
             .ignoresSafeArea()
+
+            detectionOverlay
 
             if viewModel.cameraState == .classifying {
                 classifyingOverlay
@@ -57,6 +68,19 @@ struct CameraView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.bottom, 120)
         }
+    }
+
+    private var detectionOverlay: some View {
+        GeometryReader { geometry in
+            ForEach(Array(viewModel.detectionResult.boundingBoxes.enumerated()), id: \.offset) { _, box in
+                let rect = normalizedToView(box.normalizedRect, in: geometry.size)
+                Rectangle()
+                    .stroke(.green, lineWidth: 2)
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
     private func errorOverlay(message: String) -> some View {

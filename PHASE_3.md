@@ -89,11 +89,11 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 
 ### 3.2 Real-time plant detection (viewfinder)
 *Blocked by Workstream B1.*
-- [ ] Load B1 detector model into a `VNRecognizeObjectsRequest` (or `VNCoreMLRequest`)
-- [ ] Run detection on each camera frame via `VNImageRequestHandler` (on a Vision queue, not main)
-- [ ] Map detected bounding boxes to preview coordinates (accounting for orientation/device)
-- [ ] Render bounding box overlay on the camera preview (SwiftUI overlay or `UIViewRepresentable`)
-- [ ] Throttle if needed to maintain preview framerate
+- [ ] Load B1 detector model into a `VNRecognizeObjectsRequest` (or `VNCoreMLRequest`) *(blocked: no B1 model yet)*
+- [x] Run detection on each camera frame via `VNImageRequestHandler` (on a Vision queue, not main)
+- [x] Map detected bounding boxes to preview coordinates (accounting for orientation/device)
+- [x] Render bounding box overlay on the camera preview (SwiftUI overlay or `UIViewRepresentable`)
+- [x] Throttle if needed to maintain preview framerate
 
 **Acceptance:**
 - Plant shapes are detected in real-time; bounding box appears over them
