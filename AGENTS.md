@@ -60,6 +60,8 @@ Unit tests use Swift Testing (`@Suite`/`@Test`). Snapshot tests use `SnapshotTes
 swiftlint lint
 ```
 
+The command should produce **zero warnings and zero errors** (clean output). Any new lint warnings introduced by a change must be resolved before merging.
+
 ## How to Commit and Create a Pull Request
 
 ```sh

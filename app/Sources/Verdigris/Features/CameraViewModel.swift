@@ -16,6 +16,11 @@ enum CameraSessionState: Sendable {
     case classifying
 }
 
+/// State container for the plant-camera flow. Owns permission state, the live
+/// detection bodies, the captured classification result, and the species the
+/// user has resolved to. All `plantIdentificationService` calls (detect,
+/// classify, resolve) are funneled through `@Dependency`, making this fully
+/// testable with `MockPlantIdentificationService`.
 @MainActor
 @Observable
 final class CameraViewModel {
@@ -34,6 +39,9 @@ final class CameraViewModel {
 
     private var catalog: [PlantSpecies] = []
 
+    /// Caches the catalog early so downstream lookups in `PlantCameraView` (e.g.
+    /// alternative chips) and CoreML label-resolution have data ready without a
+    /// first-class lazy fetch on the shutter tap.
     func loadCatalog() async {
         catalog = (try? await catalogService.loadCatalog()) ?? []
     }
@@ -59,7 +67,7 @@ final class CameraViewModel {
             classificationResult = result
             cameraState = .running
 
-            if let species = identificationService.resolveModelLabel(result.topLabel) {
+            if let species = await identificationService.resolveModelLabel(result.topLabel) {
                 resolvedSpecies = species
             } else {
                 resolvedSpecies = nil
@@ -123,12 +131,18 @@ final class CameraViewModel {
         return image.cropping(to: crop)
     }
 
+    /// Returns the current resolved species (top-match or whichever alternative
+    /// the user picked via `selectAlternative`). Returns nil until a successful
+    /// classify+resolve has run.
     func confirmSpecies() -> PlantSpecies? {
         resolvedSpecies
     }
 
-    func selectAlternative(_ label: String) {
-        if let species = identificationService.resolveModelLabel(label) {
+    /// Switches `resolvedSpecies` to the species matching `label` from the
+    /// classifier's alternative list. Async because label→species resolution
+    /// resolves against the (async) catalog service.
+    func selectAlternative(_ label: String) async {
+        if let species = await identificationService.resolveModelLabel(label) {
             resolvedSpecies = species
         }
     }

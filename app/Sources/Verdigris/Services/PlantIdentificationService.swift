@@ -1,5 +1,6 @@
 import CoreGraphics
 import CoreVideo
+import Dependencies
 import Foundation
 import IssueReporting
 
@@ -8,29 +9,36 @@ protocol PlantIdentificationService: Sendable {
     func detectPlant(in pixelBuffer: CVPixelBuffer) async -> DetectionResult
     /// Run classification on a captured image.
     func classify(image: CGImage) async throws -> RawClassificationResult
-    /// Map a classifier label string to a catalog species. Returns nil if no match.
-    func resolveModelLabel(_ label: String) -> PlantSpecies?
+    /// Join a classifier label to a catalog species via the bundled model-label
+    /// map (modelLabel → catalogID) and the catalog service (catalogID → PlantSpecies).
+    /// Returns nil if the label has no mapping or the mapped ID is not in the catalog.
+    /// Resolution is async because the catalog is sourced via `CatalogService`.
+    func resolveModelLabel(_ label: String) async -> PlantSpecies?
 }
 
+/// On-device plant identification via CoreML. The detection (`B1`) and
+/// classification (`B2`) models are not yet wired in (see Workstream B); their
+/// methods `reportIssue` and return a stubbed result. Label resolution is the
+/// only production-ready path and resolves against the real catalog so confirmed
+/// plants carry the catalog's actual care data — not a fabricated placeholder.
 final class CoreMLPlantIdentificationService: PlantIdentificationService, @unchecked Sendable {
-    private let labels: [String: PlantSpecies]
+    @Dependency(\.catalogService) private var catalogService
+    private let labelToCatalogID: [String: UUID]
+    private let cacheLock = NSLock()
+    private var catalogByIDCache: [UUID: PlantSpecies]?
 
-    init() {
-        self.labels = Self.loadLabels()
+    init(labelToCatalogID: [String: UUID]? = nil) {
+        self.labelToCatalogID = labelToCatalogID ?? Self.loadLabelMapping()
     }
 
-    private static func loadLabels() -> [String: PlantSpecies] {
+    private static func loadLabelMapping() -> [String: UUID] {
         guard let url = Bundle.main.url(forResource: "model-labels", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let mapping = try? JSONDecoder().decode(ModelLabelsMapping.self, from: data)
         else { return [:] }
         return Dictionary(uniqueKeysWithValues: mapping.labels.compactMap { entry in
             guard let uuid = UUID(uuidString: entry.catalogID) else { return nil }
-            return (entry.modelLabel, PlantSpecies(
-                id: uuid,
-                name: PlantName(commonNamesLocalized: ["en": entry.modelLabel]),
-                wateringInterval: 7
-            ))
+            return (entry.modelLabel, uuid)
         })
     }
 
@@ -44,8 +52,25 @@ final class CoreMLPlantIdentificationService: PlantIdentificationService, @unche
         throw PlantIdentificationError.modelNotAvailable
     }
 
-    func resolveModelLabel(_ label: String) -> PlantSpecies? {
-        labels[label]
+    func resolveModelLabel(_ label: String) async -> PlantSpecies? {
+        guard let catalogID = labelToCatalogID[label] else { return nil }
+        if let cached = catalogByIDLookup() {
+            return cached[catalogID]
+        }
+        let catalog = (try? await catalogService.loadCatalog()) ?? []
+        let byID = Dictionary(uniqueKeysWithValues: catalog.map { ($0.id, $0) })
+        setCache(byID)
+        return byID[catalogID]
+    }
+
+    private func catalogByIDLookup() -> [UUID: PlantSpecies]? {
+        cacheLock.lock(); defer { cacheLock.unlock() }
+        return catalogByIDCache
+    }
+
+    private func setCache(_ cache: [UUID: PlantSpecies]) {
+        cacheLock.lock(); defer { cacheLock.unlock() }
+        catalogByIDCache = cache
     }
 }
 
@@ -98,7 +123,7 @@ final class MockPlantIdentificationService: PlantIdentificationService, @uncheck
         return classificationResult
     }
 
-    func resolveModelLabel(_ label: String) -> PlantSpecies? {
+    func resolveModelLabel(_ label: String) async -> PlantSpecies? {
         resolvedSpecies
     }
 }

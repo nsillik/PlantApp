@@ -93,13 +93,13 @@ struct ViewModelTests {
         let viewModel = await withDependencies {
             $0.plantRepository = mockRepo
         } operation: {
-            await MainActor.run { AddPlantViewModel() }
+            await MainActor.run { AddPlantViewModel(species: testSpecies) }
         }
 
         await MainActor.run {
             viewModel.customName = "My Monstera"
         }
-        let plant = await viewModel.savePlant(species: testSpecies)
+        let plant = await viewModel.savePlant()
         await MainActor.run {
             #expect(plant != nil)
             #expect(plant?.name == "My Monstera")
@@ -115,10 +115,10 @@ struct ViewModelTests {
         let viewModel = await withDependencies {
             $0.plantRepository = mockRepo
         } operation: {
-            await MainActor.run { AddPlantViewModel() }
+            await MainActor.run { AddPlantViewModel(species: testSpecies) }
         }
 
-        let plant = await viewModel.savePlant(species: testSpecies)
+        let plant = await viewModel.savePlant()
         await MainActor.run {
             #expect(plant?.name == "Monstera")
         }

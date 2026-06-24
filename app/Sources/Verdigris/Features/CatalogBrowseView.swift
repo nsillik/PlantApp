@@ -91,19 +91,14 @@ struct CatalogBrowseView: View {
                 addSpecies = nil
             }
         }
-        .fullScreenCover(isPresented: $showCamera) {
-            CameraView(
-                onSpeciesConfirmed: { species in
-                    showCamera = false
-                    addSpecies = species
-                },
-                onDismiss: {
-                    showCamera = false
-                }
-            )
-        }
         .task {
             await viewModel.loadCatalog()
+        }
+        .plantCameraAddFlow(isPresented: $showCamera) { plant in
+            let species = viewModel.species.first { $0.id == plant.speciesID }
+            if let species {
+                onAdd?(species, plant)
+            }
         }
     }
 }

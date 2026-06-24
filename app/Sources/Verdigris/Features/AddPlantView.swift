@@ -1,9 +1,15 @@
 import Dependencies
 import SwiftUI
 
+/// Form-state VM for "AddPlantView": owns the in-flight species (so the camera
+/// re-identify path can swap it mid-form), the custom name, the light/humidity
+/// placement pickers, and the synchronous save call against `PlantRepository`.
+/// On success `savePlant()` returns the persisted `Plant` for the caller to
+/// route to detail/navigation; on failure it sets `errorMessage` and returns nil.
 @MainActor
 @Observable
 final class AddPlantViewModel {
+    var species: PlantSpecies
     var customName = ""
     var selectedLight: LightPlacement = .indirect
     var selectedHumidity: HumidityPlacement = .normal
@@ -13,7 +19,11 @@ final class AddPlantViewModel {
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
 
-    func savePlant(species: PlantSpecies) async -> Plant? {
+    init(species: PlantSpecies) {
+        self.species = species
+    }
+
+    func savePlant() async -> Plant? {
         isSaving = true
         errorMessage = nil
         let name = customName.trimmingCharacters(in: .whitespaces).isEmpty
@@ -42,11 +52,15 @@ final class AddPlantViewModel {
 }
 
 struct AddPlantView: View {
-    @State var species: PlantSpecies
+    @State private var viewModel: AddPlantViewModel
+    @State private var showCamera = false
     let onSaved: (Plant) -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel = AddPlantViewModel()
-    @State private var showCamera = false
+
+    init(species: PlantSpecies, onSaved: @escaping (Plant) -> Void) {
+        _viewModel = State(initialValue: AddPlantViewModel(species: species))
+        self.onSaved = onSaved
+    }
 
     var body: some View {
         NavigationStack {
@@ -83,7 +97,7 @@ struct AddPlantView: View {
                 Section {
                     Button(String(localized: "Save Plant")) {
                         Task {
-                            guard let plant = await viewModel.savePlant(species: species) else { return }
+                            guard let plant = await viewModel.savePlant() else { return }
                             onSaved(plant)
                             dismiss()
                         }
@@ -92,7 +106,7 @@ struct AddPlantView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .navigationTitle(String(localized: "Add \(species.name.localizedName)"))
+            .navigationTitle(String(localized: "Add \(viewModel.species.name.localizedName)"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -103,9 +117,9 @@ struct AddPlantView: View {
                 }
             }
             .fullScreenCover(isPresented: $showCamera) {
-                CameraView(
+                PlantCameraView(
                     onSpeciesConfirmed: { identifiedSpecies in
-                        species = identifiedSpecies
+                        viewModel.species = identifiedSpecies
                         showCamera = false
                     },
                     onDismiss: {

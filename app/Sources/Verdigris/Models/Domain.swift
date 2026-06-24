@@ -92,7 +92,7 @@ struct CareSheet: Sendable, Codable, Equatable {
 }
 
 /// Reference data describing care requirements for a plant species.
-struct PlantSpecies: Identifiable, Sendable, Codable {
+struct PlantSpecies: Identifiable, Sendable, Codable, Equatable {
     let id: UUID
     var name: PlantName
     var scientificName: String?
