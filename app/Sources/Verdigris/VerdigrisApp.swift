@@ -30,8 +30,7 @@ struct VerdigrisApp: App {
 struct OnboardingRootView: View {
     @State var coordinator: OnboardingCoordinator
     @State private var showCatalog = false
-    @State private var showCamera = false
-    @State private var cameraSpecies: PlantSpecies?
+    @State private var showCameraFlow = false
 
     var body: some View {
         Group {
@@ -56,7 +55,7 @@ struct OnboardingRootView: View {
                     .controlSize(.large)
 
                     Button(String(localized: "Identify with Camera")) {
-                        showCamera = true
+                        showCameraFlow = true
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
@@ -68,22 +67,8 @@ struct OnboardingRootView: View {
                         Task { await coordinator.saveProfileAndComplete() }
                     }
                 }
-                .fullScreenCover(isPresented: $showCamera) {
-                    CameraView(
-                        onSpeciesConfirmed: { species in
-                            cameraSpecies = species
-                            showCamera = false
-                        },
-                        onDismiss: {
-                            showCamera = false
-                        }
-                    )
-                }
-                .sheet(item: $cameraSpecies) { species in
-                    AddPlantView(species: species) { plant in
-                        cameraSpecies = nil
-                        Task { await coordinator.saveProfileAndComplete() }
-                    }
+                .plantCameraAddFlow(isPresented: $showCameraFlow) { _ in
+                    Task { await coordinator.saveProfileAndComplete() }
                 }
             case .complete:
                 HomeView(onboardingCoordinator: coordinator)

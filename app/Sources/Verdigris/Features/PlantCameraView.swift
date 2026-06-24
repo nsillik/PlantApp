@@ -1,255 +1,300 @@
-@preconcurrency import AVFoundation
-@preconcurrency import CoreVideo
 import SwiftUI
 import UIKit
 
-struct PlantCameraView: UIViewControllerRepresentable {
-    let viewModel: CameraViewModel
-    let onDismiss: () -> Void
+/// SwiftUI host for the AI-assisted plant identification flow. Stacks the live
+/// preview (`CameraPreviewView`) with user-facing overlays: detected bounding
+/// boxes, "point at a plant" hint, classifying spinner, result card, and the
+/// permission-denied prompt. Camera plumbing (AVFoundation session, shutter) is
+/// owned by `CameraPreviewView`; permission state is surfaced via `CameraViewModel`.
+struct PlantCameraView: View {
+    @State private var viewModel = CameraViewModel()
+    @State private var showCatalogSearch = false
     let onSpeciesConfirmed: (PlantSpecies) -> Void
+    let onDismiss: () -> Void
 
-    func makeUIViewController(context: Context) -> CameraViewController {
-        CameraViewController(viewModel: viewModel, onDismiss: onDismiss, onSpeciesConfirmed: onSpeciesConfirmed)
+    var body: some View {
+        ZStack {
+            CameraPreviewView(viewModel: viewModel, onDismiss: onDismiss)
+                .ignoresSafeArea()
+
+            if viewModel.permissionState == .denied {
+                CameraPermissionDeniedView(onOpenSettings: openSettings)
+            } else if viewModel.permissionState == .granted {
+                overlayContent
+            } else {
+                ProgressView()
+                    .tint(.white)
+            }
+        }
+        .task {
+            await viewModel.loadCatalog()
+        }
+        .sheet(isPresented: $showCatalogSearch) {
+            catalogSearchSheet
+        }
     }
 
-    func updateUIViewController(_ uiViewController: CameraViewController, context: Context) {}
-}
+    @ViewBuilder
+    private var overlayContent: some View {
+        detectionOverlay
 
-final class CameraViewController: UIViewController, AVCaptureVideoDataOutputSampleBufferDelegate {
-    private let viewModel: CameraViewModel
-    private let onDismiss: () -> Void
-    private let onSpeciesConfirmed: (PlantSpecies) -> Void
-    private var captureSession: AVCaptureSession?
-    private var previewLayer: AVCaptureVideoPreviewLayer?
-    private let sessionQueue = DispatchQueue(label: "com.verdigris.camera.session", qos: .userInitiated)
-    private let videoOutput = AVCaptureVideoDataOutput()
-    private let photoOutput = AVCapturePhotoOutput()
-    private var photoCaptureDelegate: PhotoCaptureDelegate?
-
-    private lazy var shutterButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        let config = UIImage.SymbolConfiguration(pointSize: 60, weight: .regular)
-        button.setImage(UIImage(systemName: "circle.fill", withConfiguration: config), for: .normal)
-        button.tintColor = .white
-        button.layer.shadowColor = UIColor.black.cgColor
-        button.layer.shadowOffset = CGSize(width: 0, height: 2)
-        button.layer.shadowOpacity = 0.3
-        button.layer.shadowRadius = 4
-        button.addTarget(self, action: #selector(shutterTapped), for: .touchUpInside)
-        return button
-    }()
-
-    private lazy var cancelButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle(String(localized: "Cancel"), for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        button.tintColor = .white
-        button.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
-        return button
-    }()
-
-    init(viewModel: CameraViewModel, onDismiss: @escaping () -> Void, onSpeciesConfirmed: @escaping (PlantSpecies) -> Void) {
-        self.viewModel = viewModel
-        self.onDismiss = onDismiss
-        self.onSpeciesConfirmed = onSpeciesConfirmed
-        super.init(nibName: nil, bundle: nil)
+        if viewModel.cameraState == .classifying {
+            classifyingOverlay
+        } else if let error = viewModel.errorMessage {
+            errorOverlay(message: error)
+        } else if let result = viewModel.classificationResult, let species = viewModel.resolvedSpecies {
+            resultCardOverlay(result: result, species: species)
+        } else if viewModel.cameraState == .running || viewModel.cameraState == .idle {
+            hintOverlay
+        }
     }
 
-    required init?(coder: NSCoder) { nil }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        view.backgroundColor = .black
-        checkPermission()
+    private var classifyingOverlay: some View {
+        VStack {
+            Spacer()
+            ProgressView(String(localized: "Identifying plant…"))
+                .padding()
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            Spacer().frame(height: 120)
+        }
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        previewLayer?.frame = view.bounds
+    private var hintOverlay: some View {
+        VStack {
+            Spacer()
+            Text(String(localized: "Point your camera at a plant"))
+                .font(.headline)
+                .foregroundStyle(.white)
+                .padding()
+                .background(.black.opacity(0.4))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding(.bottom, 120)
+        }
     }
 
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        stopSession()
+    private var detectionOverlay: some View {
+        GeometryReader { geometry in
+            ForEach(Array(viewModel.detectionResult.boundingBoxes.enumerated()), id: \.offset) { _, box in
+                let rect = normalizedToView(box.normalizedRect, in: geometry.size)
+                Rectangle()
+                    .stroke(.green, lineWidth: 2)
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
+            }
+        }
+        .allowsHitTesting(false)
     }
 
-    private func checkPermission() {
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            viewModel.permissionState = .granted
-            setupCamera()
-        case .notDetermined:
-            viewModel.permissionState = .notDetermined
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                DispatchQueue.main.async {
-                    if granted {
-                        self?.viewModel.permissionState = .granted
-                        self?.setupCamera()
-                    } else {
-                        self?.viewModel.permissionState = .denied
-                        self?.showPermissionDenied()
+    private func errorOverlay(message: String) -> some View {
+        VStack {
+            Spacer()
+            CameraErrorOverlay(
+                message: message,
+                onSearchCatalog: { showCatalogSearch = true },
+                onTryAgain: { viewModel.reset() }
+            )
+            Spacer().frame(height: 120)
+        }
+    }
+
+    private func resultCardOverlay(result: RawClassificationResult, species: PlantSpecies) -> some View {
+        VStack {
+            Spacer()
+            CameraResultCard(
+                species: species,
+                result: result,
+                onConfirm: {
+                    if let confirmed = viewModel.confirmSpecies() {
+                        onSpeciesConfirmed(confirmed)
+                    }
+                },
+                onSearchCatalog: {
+                    showCatalogSearch = true
+                },
+                onSelectAlternative: { label in
+                    Task { await viewModel.selectAlternative(label) }
+                }
+            )
+            .padding(.horizontal)
+            .padding(.bottom, 80)
+        }
+    }
+
+    private var catalogSearchSheet: some View {
+        NavigationStack {
+            CatalogBrowseView { species, _ in
+                onSpeciesConfirmed(species)
+                showCatalogSearch = false
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(String(localized: "Back to Camera")) {
+                        showCatalogSearch = false
                     }
                 }
             }
-        case .denied, .restricted:
-            viewModel.permissionState = .denied
-            showPermissionDenied()
-        @unknown default:
-            viewModel.permissionState = .denied
-            showPermissionDenied()
         }
     }
 
-    private func showPermissionDenied() {
-        viewModel.cameraState = .idle
-        let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.text = String(localized: "Camera access is needed to identify plants.")
-        label.textColor = .white
-        label.textAlignment = .center
-        label.numberOfLines = 0
-        view.addSubview(label)
-
-        let settingsButton = UIButton(type: .system)
-        settingsButton.translatesAutoresizingMaskIntoConstraints = false
-        settingsButton.setTitle(String(localized: "Open Settings"), for: .normal)
-        settingsButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
-        settingsButton.addTarget(self, action: #selector(openSettings), for: .touchUpInside)
-        view.addSubview(settingsButton)
-
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -20),
-            label.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 40),
-            label.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -40),
-            settingsButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            settingsButton.topAnchor.constraint(equalTo: label.bottomAnchor, constant: 20)
-        ])
-    }
-
-    private func setupCamera() {
-        sessionQueue.async { [weak self] in
-            guard let self else { return }
-            let session = AVCaptureSession()
-            session.sessionPreset = .photo
-
-            guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-                  let input = try? AVCaptureDeviceInput(device: device) else {
-                DispatchQueue.main.async {
-                    self.viewModel.cameraState = .idle
-                    self.viewModel.errorMessage = String(localized: "Camera hardware unavailable.")
-                }
-                return
-            }
-
-            guard session.canAddInput(input) else { return }
-            session.addInput(input)
-
-            self.videoOutput.alwaysDiscardsLateVideoFrames = true
-            self.videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: Int(kCVPixelFormatType_32BGRA)]
-            self.videoOutput.setSampleBufferDelegate(self, queue: self.sessionQueue)
-            guard session.canAddOutput(self.videoOutput) else { return }
-            session.addOutput(self.videoOutput)
-
-            guard session.canAddOutput(self.photoOutput) else { return }
-            session.addOutput(self.photoOutput)
-
-            if let connection = self.videoOutput.connection(with: .video) {
-                connection.isEnabled = true
-            }
-
-            self.captureSession = session
-
-            DispatchQueue.main.async {
-                self.addPreviewLayer(session: session)
-                self.addOverlayButtons()
-                session.startRunning()
-                self.viewModel.cameraState = .running
-            }
-        }
-    }
-
-    private func addPreviewLayer(session: AVCaptureSession) {
-        let layer = AVCaptureVideoPreviewLayer(session: session)
-        layer.videoGravity = .resizeAspectFill
-        layer.frame = view.bounds
-        view.layer.addSublayer(layer)
-        previewLayer = layer
-    }
-
-    private func addOverlayButtons() {
-        view.addSubview(shutterButton)
-        view.addSubview(cancelButton)
-
-        NSLayoutConstraint.activate([
-            shutterButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            shutterButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -40),
-            cancelButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
-            cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10)
-        ])
-    }
-
-    private func stopSession() {
-        captureSession?.stopRunning()
-    }
-
-    @objc private func shutterTapped() {
-        guard viewModel.cameraState == .running else { return }
-        viewModel.cameraState = .capturing
-
-        let settings = AVCapturePhotoSettings()
-        let delegate = PhotoCaptureDelegate { [weak self] image in
-            guard let self else { return }
-            Task { @MainActor in
-                self.viewModel.cameraState = .classifying
-                await self.viewModel.captureAndClassify(image: image)
-            }
-        }
-        self.photoCaptureDelegate = delegate
-        photoOutput.capturePhoto(with: settings, delegate: delegate)
-    }
-
-    @objc private func cancelTapped() {
-        stopSession()
-        onDismiss()
-    }
-
-    @objc private func openSettings() {
+    private func openSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
         UIApplication.shared.open(url)
     }
+}
 
-    nonisolated func captureOutput(
-        _ output: AVCaptureOutput,
-        didOutput sampleBuffer: CMSampleBuffer,
-        from connection: AVCaptureConnection
-    ) {
-        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
-        Task { @MainActor in
-            guard !viewModel.isProcessingFrame else { return }
-            guard viewModel.cameraState == .running else { return }
-            viewModel.isProcessingFrame = true
-            let result = await viewModel.detectPlant(in: pixelBuffer)
-            viewModel.updateDetection(result)
+private func normalizedToView(_ rect: CGRect, in size: CGSize) -> CGRect {
+    CGRect(
+        x: rect.origin.x * size.width,
+        y: (1 - rect.origin.y - rect.height) * size.height,
+        width: rect.width * size.width,
+        height: rect.height * size.height
+    )
+}
+
+struct CameraErrorOverlay: View {
+    let message: String
+    let onSearchCatalog: () -> Void
+    let onTryAgain: () -> Void
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.body)
+                .multilineTextAlignment(.center)
+            Button(String(localized: "Search Catalog")) {
+                onSearchCatalog()
+            }
+            .buttonStyle(.borderedProminent)
+            Button(String(localized: "Try Again")) {
+                onTryAgain()
+            }
+            .buttonStyle(.bordered)
         }
+        .padding()
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding()
     }
 }
 
-private final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
-    let onComplete: (CGImage) -> Void
+/// Permission-denied overlay shown when the user has declined camera access.
+/// Renders the explanatory message plus a single button that deep-links to the
+/// app's privacy settings via `UIApplication.openSettingsURLString`.
+struct CameraPermissionDeniedView: View {
+    let onOpenSettings: () -> Void
 
-    init(onComplete: @escaping (CGImage) -> Void) {
-        self.onComplete = onComplete
+    var body: some View {
+        VStack(spacing: 20) {
+            Text(String(localized: "Camera access is needed to identify plants."))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
+
+            Button(String(localized: "Open Settings")) {
+                onOpenSettings()
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .padding()
+    }
+}
+
+struct CameraResultCard: View {
+    let species: PlantSpecies
+    let result: RawClassificationResult
+    let onConfirm: () -> Void
+    let onSearchCatalog: () -> Void
+    let onSelectAlternative: (String) -> Void
+
+    private var isLowConfidence: Bool {
+        result.confidence < 0.6
     }
 
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        guard error == nil,
-              let data = photo.fileDataRepresentation(),
-              let provider = CGDataProvider(data: data as CFData),
-              let cgImage = CGImage(jpegDataProviderSource: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
-        else { return }
-        onComplete(cgImage)
+    var body: some View {
+        VStack(spacing: 12) {
+            Text(species.name.localizedName)
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(.primary)
+                .lineLimit(2)
+
+            confidenceBar
+
+            Text(String(localized: "Is this right?"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            if isLowConfidence {
+                Text(String(localized: "We're not completely sure — tap Search to pick the right species"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            HStack(spacing: 12) {
+                Button(String(localized: "Confirm")) {
+                    onConfirm()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+
+                Button(String(localized: "Search Catalog")) {
+                    onSearchCatalog()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+            }
+
+            if !result.alternatives.isEmpty {
+                alternativeChips
+            }
+        }
+        .padding()
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .shadow(radius: 8)
+    }
+
+    private var confidenceBar: some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text(String(localized: "Confidence"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("\(Int(result.confidence * 100))%")
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(isLowConfidence ? .orange : .green)
+            }
+            ProgressView(value: result.confidence)
+                .tint(isLowConfidence ? .orange : .green)
+        }
+    }
+
+    private var alternativeChips: some View {
+        VStack(spacing: 4) {
+            Text(String(localized: "Also match"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                ForEach(result.alternatives, id: \.label) { alt in
+                    Button {
+                        onSelectAlternative(alt.label)
+                    } label: {
+                        Text(alt.label.replacingOccurrences(of: "_", with: " "))
+                            .font(.caption)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(.secondary.opacity(0.2))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
     }
 }

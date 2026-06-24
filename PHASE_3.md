@@ -27,7 +27,8 @@ Injected via `@Dependency(\.plantIdentification)`. Mock implementations are used
 ```swift
 protocol PlantIdentificationService: Sendable {
     func detectPlant(in pixelBuffer: CVPixelBuffer) async -> DetectionResult
-    func classify(image: CGImage) async -> ClassificationResult
+    func classify(image: CGImage) async throws -> RawClassificationResult
+    func resolveModelLabel(_ label: String) async -> PlantSpecies?
 }
 ```
 
@@ -35,14 +36,23 @@ protocol PlantIdentificationService: Sendable {
 
 ```swift
 struct DetectionResult: Sendable, Equatable {
-    let boundingBox: CGRect
+    let boundingBoxes: [DetectedBoundingBox]
+}
+
+struct DetectedBoundingBox: Sendable, Equatable {
+    let normalizedRect: CGRect
     let confidence: Double
 }
 
-struct ClassificationResult: Sendable, Equatable {
-    let topMatch: PlantSpecies
+struct RawClassificationResult: Sendable, Equatable {
+    let topLabel: String
     let confidence: Double
-    let alternatives: [(species: PlantSpecies, confidence: Double)]
+    let alternatives: [AlternativeLabel]
+}
+
+struct AlternativeLabel: Sendable, Equatable {
+    let label: String
+    let confidence: Double
 }
 ```
 
@@ -59,15 +69,20 @@ A `model-labels.json` file is bundled alongside the `.mlmodelc`:
 }
 ```
 
-A pure function `resolveModelLabel(_:) -> PlantSpecies?` on the service protocol handles mapping model output labels to catalog species IDs. This is testable in isolation and decouples CoreML invocation from catalog resolution.
+A pure function `resolveModelLabel(_:) async -> PlantSpecies?` on the service protocol handles mapping model output labels to catalog species IDs — it joins the bundled `model-labels.json` (modelLabel → catalogID) against `CatalogService` (catalogID → real `PlantSpecies` with care data). This is testable in isolation and decouples CoreML invocation from catalog resolution.
 
 ### CameraViewModel
 
 `CameraViewModel` is `@Observable` and manages camera session lifecycle, permission state, detection pipeline, and classification lifecycle. It injects `@Dependency(\.plantIdentification)`.
 
-### CameraIdentificationView vs. CameraCaptureView
+### PlantCameraView vs. CameraView
 
-Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView` from Phase 1 is a general-purpose photo capture utility and is not reused — the identification view needs real-time Vision overlays, detection state, and classification result handling that differ from the simple capture use case.
+Two camera constructs exist with deliberate naming:
+
+- **`PlantCameraView`** (SwiftUI host) — the AI-assisted plant identification flow. It stacks `CameraPreviewView` (AVFoundation representable) with overlays: bounding boxes, hint text, classifying spinner, result card, error messages, and the permission-denied prompt. This is what the user sees when tapping "Identify with Camera."
+- **`CameraPreviewView`** (UIViewRepresentable) — the shared AVFoundation preview layer. It owns the capture session, shutter button, cancel button, and frame-delegate plumbing. Both `PlantCameraView` (AI flow) and the future `CameraView` (care-event photo attachment) reuse this representable.
+- **`CameraView`** (reserved name, not yet built) — a future simple photo-attach flow for care events (snap a picture to attach to a `CareEvent`). This will also use `CameraPreviewView` but have a different overlay stack (no detection, no result card, just a snapshot–save–dismiss UX).
+- **`PlantCameraFlow`** (view modifier) — a `ViewModifier` that owns the full-screen cover for `PlantCameraView`, the subsequent `AddPlantView` sheet, and the dismiss-then-navigate sequencing. Callers invoke `.plantCameraAddFlow(isPresented:onSaved:)`. This is used by `HomeView`, `OnboardingRootView`, and `CatalogBrowseView` (anywhere that wants "open camera → confirm species → add plant" in one action). The `AddPlantView` re-identify path is intentionally NOT routed through this modifier — it keeps its own inline `fullScreenCover` because it already lives inside an `AddPlantView` and only needs a `PlantSpecies` back.
 
 ---
 
@@ -75,7 +90,7 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 
 ### 3.1 Camera permission + AVFoundation setup
 - [x] Add `NSCameraUsageDescription` to Info.plist (English + Spanish)
-- [x] Add camera button to `AddPlantView` → presents `CameraIdentificationView`; also available in `.addFirstPlant` flow
+- [x] Add camera button to `AddPlantView` → presents `PlantCameraView`; also available in `.addFirstPlant` flow
 - [x] Implement `CameraViewModel` (`@Observable`) managing session lifecycle, permission state, and capture
 - [x] Implement camera capture session (`AVCaptureSession`, photo input, video preview)
 - [x] Camera permission flow: request on first camera use, handle denied state
@@ -168,6 +183,7 @@ Phase 3 builds a new `CameraIdentificationView`. The existing `CameraCaptureView
 - [ ] Both models load without errors at runtime
 - [ ] Both run on Neural Engine (not CPU) — verify via Instruments or timing
 - [ ] Model labels map correctly to catalog species IDs (document the mapping)
+- [ ] — Verify `model-labels.json` is regenerated against the **real** catalog UUIDs. The copy shipped during Phase 3 development (`app/Resources/Catalog/model-labels.json`) contains two synthetic UUIDs and is only a placeholder for dev/test.
 
 **Acceptance:**
 - Both models are bundled and load successfully

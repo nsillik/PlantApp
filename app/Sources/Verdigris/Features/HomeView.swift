@@ -211,8 +211,7 @@ struct HomeView: View {
     @State private var showSettings = false
     @State private var showNotificationAlert = false
     @State private var hasShownNotificationPrompt = false
-    @State private var showCamera = false
-    @State private var cameraSpecies: PlantSpecies?
+    @State private var showCameraFlow = false
     @State private var savedPlant: Plant?
     let onboardingCoordinator: OnboardingCoordinator
 
@@ -246,7 +245,7 @@ struct HomeView: View {
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
-                        showCamera = true
+                        showCameraFlow = true
                     } label: {
                         Image(systemName: "camera")
                     }
@@ -273,28 +272,14 @@ struct HomeView: View {
                     onboardingCoordinator.resetOnboarding()
                 }
             }
-            .fullScreenCover(isPresented: $showCamera) {
-                CameraView(
-                    onSpeciesConfirmed: { species in
-                        cameraSpecies = species
-                        showCamera = false
-                    },
-                    onDismiss: {
-                        showCamera = false
-                    }
-                )
-            }
-            .sheet(item: $cameraSpecies) { species in
-                AddPlantView(species: species) { plant in
-                    cameraSpecies = nil
-                    savedPlant = plant
-                    Task { await viewModel.loadAll() }
-                }
-            }
             .sheet(item: $savedPlant) { plant in
                 NavigationStack {
                     PlantDetailView(plant: plant)
                 }
+            }
+            .plantCameraAddFlow(isPresented: $showCameraFlow) { plant in
+                savedPlant = plant
+                Task { await viewModel.loadAll() }
             }
             .alert(String(localized: "Enable Notifications?"), isPresented: $showNotificationAlert) {
                 Button(String(localized: "Yes")) {

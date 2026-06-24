@@ -103,5 +103,3 @@ actor MockInMemoryCatalogService: CatalogService {
         storage
     }
 }
-
-
