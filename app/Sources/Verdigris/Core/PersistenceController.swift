@@ -44,7 +44,11 @@ final class PersistenceController: PersistenceService {
         container = NSPersistentCloudKitContainer(name: "Verdigris", managedObjectModel: model)
 
         if inMemory {
-            container.persistentStoreDescriptions.first?.url = URL(fileURLWithPath: "/dev/null")
+            guard let description = container.persistentStoreDescriptions.first else {
+                fatalError("No persistent store description found")
+            }
+            description.url = URL(fileURLWithPath: "/dev/null")
+            description.type = NSInMemoryStoreType
         }
 
         container.loadPersistentStores { _, error in
@@ -52,6 +56,8 @@ final class PersistenceController: PersistenceService {
                 print("Warning: Failed to load in-memory persistent store: \(error)")
             }
         }
+
+        container.viewContext.automaticallyMergesChangesFromParent = true
     }
 
     func saveContext() {

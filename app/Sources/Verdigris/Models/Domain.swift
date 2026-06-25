@@ -267,25 +267,6 @@ struct CareSchedule: Identifiable, Sendable, Codable {
     var adherenceOffset: Int
 }
 
-/// A growth or health observation logged for a plant.
-struct JournalEntry: Identifiable, Sendable, Codable {
-    let id: UUID
-    /// The plant being observed.
-    var plantID: UUID
-    /// The date of the observation.
-    var date: Date
-    /// Overall health rating from 1 (worst) to 10 (best).
-    var healthScore: Int
-    /// Leaf count at the time of observation.
-    var leafCount: Int
-    /// Plant height in centimeters.
-    var height: Double
-    /// Freeform observation notes.
-    var notes: String?
-    /// Optional photo taken during the observation.
-    var photoData: Data?
-}
-
 /// A resolved city from a user's search query.
 struct City: Equatable, Hashable, Sendable, Codable {
     var name: String
