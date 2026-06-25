@@ -3,42 +3,27 @@ import SwiftUI
 
 /// Owns the city-search and profile-editing state for the Settings screen.
 ///
-/// Shares the same `CitySearchService`-driven search/resolve flow as
-/// `LocationOnboardingViewModel`, but also handles saving the updated profile
-/// to the repository and toggling edit mode.
+/// Composes `CitySearchSession` for the search/resolve flow and handles
+/// saving the updated profile to the repository and toggling edit mode.
 @MainActor
 @Observable
 final class SettingsViewModel {
+    let citySession = CitySearchSession()
     /// The currently persisted profile, loaded on appear.
     var currentProfile: UserProfile?
     /// Whether the user is editing the location field.
     var isEditingLocation = false
-    /// Current text in the search field (visible only when editing).
-    var searchText = ""
-    /// True while the autocomplete search is in flight.
-    var isSearching = false
-    /// True while resolving a selected suggestion to coordinates.
-    var isResolving = false
-    /// Non-nil when the last search or resolution failed.
-    var errorMessage: String?
-    /// Autocomplete city suggestions from `CitySearchService.search`.
-    var suggestions: [CitySuggestion] = []
-    /// The city the user has tapped and resolved. Nil until a selection is made.
-    var selectedCity: City?
 
     @ObservationIgnored
     @Dependency(\.userProfileRepository) private var profileRepository
     @ObservationIgnored
-    @Dependency(\.citySearchService) private var searchService
-    @ObservationIgnored
     @Dependency(\.climateService) private var climateService
-
-    private var searchTask: Task<Void, Never>?
 
     /// Fetches the existing profile from the repository.
     func loadProfile() async {
         do {
             currentProfile = try await profileRepository.fetch()
+            citySession.searchText = currentProfile?.city ?? ""
         } catch {
             reportIssue("""
               Failed to load profile: \(error.localizedDescription)
@@ -46,77 +31,9 @@ final class SettingsViewModel {
         }
     }
 
-    /// Debounced search: waits 400ms after the last keystroke, then calls
-    /// `CitySearchService.search`. Cancels any in-flight search first.
-    /// Guards against re-searching when the text matches `selectedCity.name`.
-    func searchCities() {
-        searchTask?.cancel()
-        let text = searchText.trimmingCharacters(in: .whitespaces)
-        if text.isEmpty {
-            suggestions = []
-            selectedCity = nil
-            isSearching = false
-            errorMessage = nil
-            return
-        }
-        if let city = selectedCity, text == city.name {
-            return
-        }
-        selectedCity = nil
-        suggestions = []
-        isSearching = true
-        errorMessage = nil
-        searchTask = Task { [weak self] in
-            try? await Task.sleep(for: .milliseconds(400))
-            guard let self else { return }
-            guard !Task.isCancelled else { return }
-            do {
-                let results = try await searchService.search(query: text)
-                guard !Task.isCancelled else { return }
-                suggestions = results
-                isSearching = false
-            } catch {
-                guard !Task.isCancelled else { return }
-                suggestions = []
-                errorMessage = error.localizedDescription
-                isSearching = false
-            }
-        }
-    }
-
-    /// Kicks off coordinate resolution for the tapped suggestion.
-    ///
-    /// Calls `CitySearchService.resolve` and on success sets `selectedCity` and
-    /// fills the text field. On failure the error message is displayed.
-    func selectSuggestion(_ suggestion: CitySuggestion) {
-        searchTask?.cancel()
-        isResolving = true
-        errorMessage = nil
-        searchTask = Task { [weak self] in
-            guard let self else { return }
-            do {
-                let city = try await searchService.resolve(suggestion)
-                guard !Task.isCancelled else { return }
-                selectedCity = city
-                suggestions = []
-                searchText = city.name
-                isResolving = false
-            } catch {
-                guard !Task.isCancelled else { return }
-                errorMessage = error.localizedDescription
-                isResolving = false
-            }
-        }
-    }
-
-    /// Returns the climate classification label for display purposes.
-    func climateLabel(for city: City) -> String {
-        climateService.climateClassification(for: city).localizedLabel
-    }
-
     /// Persists the resolved city as the new profile and exits edit mode.
     func confirmCity() async {
-        guard let city = selectedCity else { return }
+        guard let city = citySession.selectedCity else { return }
 
         let profile = UserProfile(
             id: currentProfile?.id ?? UUID(),
@@ -129,9 +46,7 @@ final class SettingsViewModel {
         try? await profileRepository.save(profile)
         currentProfile = profile
         isEditingLocation = false
-        searchText = ""
-        selectedCity = nil
-        suggestions = []
+        citySession.reset()
     }
 }
 
@@ -161,29 +76,29 @@ struct SettingsView: View {
 
                     if viewModel.isEditingLocation {
                         VStack(spacing: 12) {
-                            TextField(String(localized: "Search city…"), text: $viewModel.searchText)
+                            TextField(String(localized: "Search city…"), text: $viewModel.citySession.searchText)
                                 .textFieldStyle(.roundedBorder)
                                 .autocorrectionDisabled()
-                                .onChange(of: viewModel.searchText) { _, _ in
-                                    viewModel.searchCities()
+                                .onChange(of: viewModel.citySession.searchText) { _, _ in
+                                    viewModel.citySession.searchCities()
                                 }
 
-                            if viewModel.isResolving {
+                            if viewModel.citySession.isResolving {
                                 ProgressView(String(localized: "Resolving location…"))
-                            } else if viewModel.isSearching {
+                            } else if viewModel.citySession.isSearching {
                                 ProgressView()
                             }
 
-                            if let error = viewModel.errorMessage {
+                            if let error = viewModel.citySession.errorMessage {
                                 Text(error)
                                     .font(.caption)
                                     .foregroundStyle(.red)
                             }
 
-                            if !viewModel.suggestions.isEmpty {
-                                ForEach(viewModel.suggestions, id: \.self) { suggestion in
+                            if !viewModel.citySession.suggestions.isEmpty {
+                                ForEach(viewModel.citySession.suggestions, id: \.self) { suggestion in
                                     Button {
-                                        viewModel.selectSuggestion(suggestion)
+                                        viewModel.citySession.selectSuggestion(suggestion)
                                     } label: {
                                         VStack(alignment: .leading, spacing: 2) {
                                             Text(suggestion.name)
@@ -199,11 +114,11 @@ struct SettingsView: View {
                                 }
                             }
 
-                            if let city = viewModel.selectedCity {
+                            if let city = viewModel.citySession.selectedCity {
                                 VStack(alignment: .leading) {
                                     Text(city.name)
                                         .font(.headline)
-                                    Text(viewModel.climateLabel(for: city))
+                                    Text(viewModel.citySession.climateLabel(for: city))
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }
