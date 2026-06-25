@@ -84,4 +84,55 @@ final class PersistenceController: PersistenceService {
             }
         }
     }
+
+    func fetchAll<T: NSManagedObject>(
+        _ request: NSFetchRequest<T>,
+        predicate: NSPredicate? = nil,
+        sortDescriptors: [NSSortDescriptor]? = nil
+    ) async throws -> [T] {
+        try await withBackgroundContext { context in
+            request.predicate = predicate
+            request.sortDescriptors = sortDescriptors
+            return try context.fetch(request)
+        }
+    }
+
+    func fetchFirst<T: NSManagedObject>(
+        _ request: NSFetchRequest<T>,
+        predicate: NSPredicate? = nil
+    ) async throws -> T? {
+        try await withBackgroundContext { context in
+            request.predicate = predicate
+            request.fetchLimit = 1
+            return try context.fetch(request).first
+        }
+    }
+
+    func upsert<T: NSManagedObject>(
+        _ request: NSFetchRequest<T>,
+        predicate: NSPredicate? = nil,
+        configure: @Sendable @escaping (T) -> Void
+    ) async throws {
+        try await withBackgroundContext { context in
+            request.predicate = predicate
+            let existing = try context.fetch(request)
+            let entity = existing.first ?? T(context: context)
+            configure(entity)
+            try context.save()
+        }
+    }
+
+    func deleteAll<T: NSManagedObject>(
+        _ request: NSFetchRequest<T>,
+        predicate: NSPredicate? = nil
+    ) async throws {
+        try await withBackgroundContext { context in
+            request.predicate = predicate
+            let entities = try context.fetch(request)
+            for entity in entities {
+                context.delete(entity)
+            }
+            try context.save()
+        }
+    }
 }

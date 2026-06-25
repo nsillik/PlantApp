@@ -63,43 +63,19 @@ actor CoreDataPlantRepository: PlantRepository {
     }
 
     func fetchAll() async throws -> [Plant] {
-        try await persistenceService.withBackgroundContext { context in
-            let request = PlantEntity.fetchRequest()
-            let entities = try context.fetch(request)
-            return entities.compactMap { $0.toDomain() }
-        }
+        try await persistenceService.fetchAll(PlantEntity.fetchRequest()).compactMap { $0.toDomain() }
     }
 
     func fetch(id: UUID) async throws -> Plant? {
-        try await persistenceService.withBackgroundContext { context in
-            let request = PlantEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id == %@", id as CVarArg)
-            let entities = try context.fetch(request)
-            return entities.first?.toDomain()
-        }
+        try await persistenceService.fetchFirst(PlantEntity.fetchRequest(), predicate: NSPredicate(format: "id == %@", id as CVarArg))?.toDomain()
     }
 
     func save(_ plant: Plant) async throws {
-        try await persistenceService.withBackgroundContext { context in
-            let request = PlantEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id == %@", plant.id as CVarArg)
-            let entities = try context.fetch(request)
-            let entity = entities.first ?? PlantEntity(context: context)
-            entity.fromDomain(plant)
-            try context.save()
-        }
+        try await persistenceService.upsert(PlantEntity.fetchRequest(), predicate: NSPredicate(format: "id == %@", plant.id as CVarArg)) { $0.fromDomain(plant) }
     }
 
     func delete(_ plant: Plant) async throws {
-        try await persistenceService.withBackgroundContext { context in
-            let request = PlantEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "id == %@", plant.id as CVarArg)
-            let entities = try context.fetch(request)
-            for entity in entities {
-                context.delete(entity)
-            }
-            try context.save()
-        }
+        try await persistenceService.deleteAll(PlantEntity.fetchRequest(), predicate: NSPredicate(format: "id == %@", plant.id as CVarArg))
     }
 }
 
@@ -112,21 +88,11 @@ actor CoreDataUserProfileRepository: UserProfileRepository {
     }
 
     func fetch() async throws -> UserProfile? {
-        try await persistenceService.withBackgroundContext { context in
-            let request = UserProfileEntity.fetchRequest()
-            let entities = try context.fetch(request)
-            return entities.first?.toDomain()
-        }
+        try await persistenceService.fetchFirst(UserProfileEntity.fetchRequest())?.toDomain()
     }
 
     func save(_ profile: UserProfile) async throws {
-        try await persistenceService.withBackgroundContext { context in
-            let request = UserProfileEntity.fetchRequest()
-            let entities = try context.fetch(request)
-            let entity = entities.first ?? UserProfileEntity(context: context)
-            entity.fromDomain(profile)
-            try context.save()
-        }
+        try await persistenceService.upsert(UserProfileEntity.fetchRequest()) { $0.fromDomain(profile) }
     }
 }
 
@@ -138,31 +104,15 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
     }
 
     func fetch(plantID: UUID) async throws -> CareSchedule? {
-        try await persistenceService.withBackgroundContext { context in
-            let request = CareScheduleEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
-            let entities = try context.fetch(request)
-            return entities.first?.toDomain()
-        }
+        try await persistenceService.fetchFirst(CareScheduleEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg))?.toDomain()
     }
 
     func fetchAll() async throws -> [CareSchedule] {
-        try await persistenceService.withBackgroundContext { context in
-            let request = CareScheduleEntity.fetchRequest()
-            let entities = try context.fetch(request)
-            return entities.compactMap { $0.toDomain() }
-        }
+        try await persistenceService.fetchAll(CareScheduleEntity.fetchRequest()).compactMap { $0.toDomain() }
     }
 
     func save(_ schedule: CareSchedule) async throws {
-        try await persistenceService.withBackgroundContext { context in
-            let request = CareScheduleEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "plantID == %@", schedule.plantID as CVarArg)
-            let entities = try context.fetch(request)
-            let entity = entities.first ?? CareScheduleEntity(context: context)
-            entity.fromDomain(schedule)
-            try context.save()
-        }
+        try await persistenceService.upsert(CareScheduleEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", schedule.plantID as CVarArg)) { $0.fromDomain(schedule) }
     }
 
     func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws {
@@ -192,13 +142,7 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
     }
 
     func fetchCareEvents(plantID: UUID) async throws -> [CareEvent] {
-        try await persistenceService.withBackgroundContext { context in
-            let request = CareEventEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
-            request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
-            let entities = try context.fetch(request)
-            return entities.compactMap { $0.toDomain() }
-        }
+        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
     }
 }
 
@@ -210,22 +154,11 @@ actor CoreDataCareEventRepository: CareEventRepository {
     }
 
     func fetch(plantID: UUID) async throws -> [CareEvent] {
-        try await persistenceService.withBackgroundContext { context in
-            let request = CareEventEntity.fetchRequest()
-            request.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
-            request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
-            let entities = try context.fetch(request)
-            return entities.compactMap { $0.toDomain() }
-        }
+        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
     }
 
     func fetchAll() async throws -> [CareEvent] {
-        try await persistenceService.withBackgroundContext { context in
-            let request = CareEventEntity.fetchRequest()
-            request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
-            let entities = try context.fetch(request)
-            return entities.compactMap { $0.toDomain() }
-        }
+        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
     }
 
     func save(_ event: CareEvent) async throws {
