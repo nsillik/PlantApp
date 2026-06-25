@@ -23,6 +23,10 @@ enum ClimateClassification: String, Sendable, Codable {
         case .arid: String(localized: "Arid")
         }
     }
+
+    var localizedClimateLabel: String {
+        String(localized: "climate.label.\(rawValue)")
+    }
 }
 
 /// Wraps localized common names for a plant species.

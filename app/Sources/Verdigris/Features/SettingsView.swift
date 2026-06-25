@@ -58,91 +58,17 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section(String(localized: "Location")) {
-                    if let profile = viewModel.currentProfile, !viewModel.isEditingLocation {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(profile.city)
-                                    .font(.headline)
-                                Text(String(localized: "\(profile.climateClassification.localizedLabel) climate"))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Button(String(localized: "Edit")) {
-                                viewModel.isEditingLocation = true
-                            }
-                        }
-                    }
-
                     if viewModel.isEditingLocation {
-                        VStack(spacing: 12) {
-                            TextField(String(localized: "Search city…"), text: $viewModel.citySession.searchText)
-                                .textFieldStyle(.roundedBorder)
-                                .autocorrectionDisabled()
-                                .onChange(of: viewModel.citySession.searchText) { _, _ in
-                                    viewModel.citySession.searchCities()
-                                }
-
-                            if viewModel.citySession.isResolving {
-                                ProgressView(String(localized: "Resolving location…"))
-                            } else if viewModel.citySession.isSearching {
-                                ProgressView()
-                            }
-
-                            if let error = viewModel.citySession.errorMessage {
-                                Text(error)
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
-                            }
-
-                            if !viewModel.citySession.suggestions.isEmpty {
-                                ForEach(viewModel.citySession.suggestions, id: \.self) { suggestion in
-                                    Button {
-                                        viewModel.citySession.selectSuggestion(suggestion)
-                                    } label: {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(suggestion.name)
-                                                .font(.headline)
-                                            if !suggestion.region.isEmpty {
-                                                Text(suggestion.region)
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-                                    }
-                                    .foregroundStyle(.primary)
-                                }
-                            }
-
-                            if let city = viewModel.citySession.selectedCity {
-                                VStack(alignment: .leading) {
-                                    Text(city.name)
-                                        .font(.headline)
-                                    Text(viewModel.citySession.climateLabel(for: city))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-
-                                Button(String(localized: "Confirm")) {
-                                    Task { await viewModel.confirmCity() }
-                                }
-                                .buttonStyle(.borderedProminent)
-                            }
-                        }
+                        editingLocationSection
+                    } else {
+                        locationSection
                     }
                 }
-
                 Section(String(localized: "Onboarding")) {
-                    Button(String(localized: "Reset Onboarding")) {
-                        onResetOnboarding()
-                    }
-                    .foregroundStyle(.red)
+                    onboardingSection
                 }
-
                 Section(String(localized: "AI Provider")) {
-                    Text(String(localized: "AI diagnosis provider configuration will be available in a future update."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    aiProviderSection
                 }
             }
             .navigationTitle(String(localized: "Settings"))
@@ -150,5 +76,93 @@ struct SettingsView: View {
         .task {
             await viewModel.loadProfile()
         }
+    }
+
+    private var locationSection: some View {
+        HStack {
+            VStack(alignment: .leading) {
+                if let profile = viewModel.currentProfile {
+                    Text(profile.city)
+                        .font(.headline)
+                    Text(profile.climateClassification.localizedClimateLabel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Button(String(localized: "Edit")) {
+                viewModel.isEditingLocation = true
+            }
+        }
+    }
+
+    private var editingLocationSection: some View {
+        VStack(spacing: 12) {
+            TextField(String(localized: "Search city…"), text: $viewModel.citySession.searchText)
+                .textFieldStyle(.roundedBorder)
+                .autocorrectionDisabled()
+                .onChange(of: viewModel.citySession.searchText) { _, _ in
+                    viewModel.citySession.searchCities()
+                }
+
+            if viewModel.citySession.isResolving {
+                ProgressView(String(localized: "Resolving location…"))
+            } else if viewModel.citySession.isSearching {
+                ProgressView()
+            }
+
+            if let error = viewModel.citySession.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
+
+            if !viewModel.citySession.suggestions.isEmpty {
+                ForEach(viewModel.citySession.suggestions, id: \.self) { suggestion in
+                    Button {
+                        viewModel.citySession.selectSuggestion(suggestion)
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(suggestion.name)
+                                .font(.headline)
+                            if !suggestion.region.isEmpty {
+                                Text(suggestion.region)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .foregroundStyle(.primary)
+                }
+            }
+
+            if let city = viewModel.citySession.selectedCity {
+                VStack(alignment: .leading) {
+                    Text(city.name)
+                        .font(.headline)
+                    Text(viewModel.citySession.climateLabel(for: city))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Button(String(localized: "Confirm")) {
+                    Task { await viewModel.confirmCity() }
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    private var onboardingSection: some View {
+        Button(String(localized: "Reset Onboarding")) {
+            onResetOnboarding()
+        }
+        .foregroundStyle(.red)
+    }
+
+    private var aiProviderSection: some View {
+        Text(String(localized: "AI diagnosis provider configuration will be available in a future update."))
+            .font(.caption)
+            .foregroundStyle(.secondary)
     }
 }

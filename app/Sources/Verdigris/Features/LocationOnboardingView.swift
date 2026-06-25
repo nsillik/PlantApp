@@ -44,76 +44,96 @@ struct LocationOnboardingView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
-                TextField(String(localized: "Search city…"), text: $viewModel.citySession.searchText)
-                    .textFieldStyle(.plain)
-                    .autocorrectionDisabled()
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .onChange(of: viewModel.citySession.searchText) { _, _ in
-                viewModel.citySession.searchCities()
-            }
-
-            if viewModel.citySession.isResolving {
-                ProgressView(String(localized: "Resolving location…"))
-            } else if viewModel.citySession.isSearching {
-                ProgressView()
-            }
-
-            if let error = viewModel.citySession.errorMessage {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
-
-            if !viewModel.citySession.suggestions.isEmpty {
-                List(viewModel.citySession.suggestions, id: \.self) { suggestion in
-                    Button {
-                        viewModel.citySession.selectSuggestion(suggestion)
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(suggestion.name)
-                                .font(.headline)
-                            if !suggestion.region.isEmpty {
-                                Text(suggestion.region)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-                .listStyle(.plain)
-            }
-
-            if let city = viewModel.citySession.selectedCity {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(city.name)
-                        .font(.headline)
-                    Text(String(localized: "\(viewModel.citySession.climateLabel(for: city)) climate"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                Button(String(localized: "Confirm Location")) {
-                    if let profile = viewModel.buildProfile() {
-                        onComplete(profile)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-            }
+            searchField
+            loadingIndicator
+            errorMessageView
+            suggestionsList
+            confirmedCityCard
 
             Spacer()
         }
         .padding()
+    }
+
+    private var searchField: some View {
+        HStack {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+            TextField(String(localized: "Search city…"), text: $viewModel.citySession.searchText)
+                .textFieldStyle(.plain)
+                .autocorrectionDisabled()
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .onChange(of: viewModel.citySession.searchText) { _, _ in
+            viewModel.citySession.searchCities()
+        }
+    }
+
+    @ViewBuilder
+    private var loadingIndicator: some View {
+        if viewModel.citySession.isResolving {
+            ProgressView(String(localized: "Resolving location…"))
+        } else if viewModel.citySession.isSearching {
+            ProgressView()
+        }
+    }
+
+    @ViewBuilder
+    private var errorMessageView: some View {
+        if let error = viewModel.citySession.errorMessage {
+            Text(error)
+                .font(.caption)
+                .foregroundStyle(.red)
+        }
+    }
+
+    @ViewBuilder
+    private var suggestionsList: some View {
+        if !viewModel.citySession.suggestions.isEmpty {
+            List(viewModel.citySession.suggestions, id: \.self) { suggestion in
+                Button {
+                    viewModel.citySession.selectSuggestion(suggestion)
+                } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(suggestion.name)
+                            .font(.headline)
+                        if !suggestion.region.isEmpty {
+                            Text(suggestion.region)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .foregroundStyle(.primary)
+            }
+            .listStyle(.plain)
+        }
+    }
+
+    @ViewBuilder
+    private var confirmedCityCard: some View {
+        if let city = viewModel.citySession.selectedCity {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(city.name)
+                    .font(.headline)
+                    Text(viewModel.citySession.climateLabel(for: city))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Button(String(localized: "Confirm Location")) {
+                if let profile = viewModel.buildProfile() {
+                    onComplete(profile)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        }
     }
 }

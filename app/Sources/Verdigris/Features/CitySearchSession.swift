@@ -78,7 +78,7 @@ final class CitySearchSession {
     }
 
     func climateLabel(for city: City) -> String {
-        climateService.climateClassification(for: city).localizedLabel
+        climateService.climateClassification(for: city).localizedClimateLabel
     }
 
     func reset() {
