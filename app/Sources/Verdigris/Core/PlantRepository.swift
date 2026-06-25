@@ -334,3 +334,51 @@ private extension CareEventEntity {
         notes = event.notes
     }
 }
+
+// MARK: - DependencyClient test stubs
+
+@DependencyClient
+struct PlantRepositoryClient: PlantRepository {
+    func fetchAll() async throws -> [Plant] { [] }
+    func fetch(id _: UUID) async throws -> Plant? { nil }
+}
+
+@DependencyClient
+struct UserProfileRepositoryClient: UserProfileRepository {
+    func fetch() async throws -> UserProfile? { nil }
+}
+
+@DependencyClient
+struct CareScheduleRepositoryClient: CareScheduleRepository {
+    func fetch(plantID _: UUID) async throws -> CareSchedule? { nil }
+    func fetchAll() async throws -> [CareSchedule] { [] }
+    func fetchCareEvents(plantID _: UUID) async throws -> [CareEvent] { [] }
+}
+
+@DependencyClient
+struct CareEventRepositoryClient: CareEventRepository {
+    func fetch(plantID _: UUID) async throws -> [CareEvent] { [] }
+    func fetchAll() async throws -> [CareEvent] { [] }
+}
+
+@DependencyClient
+struct CatalogServiceClient: CatalogService {
+    func loadCatalog() async throws -> [PlantSpecies] { [] }
+}
+
+@DependencyClient
+struct CitySearchServiceClient: CitySearchService {
+    func search(query _: String) async throws -> [CitySuggestion] { [] }
+    func resolve(_: CitySuggestion) async throws -> City { throw CitySearchError.resolutionFailed }
+}
+
+@DependencyClient
+struct ClimateServiceClient: ClimateService {
+    func climateClassification(for _: City) -> ClimateClassification { .temperate }
+}
+
+@DependencyClient
+struct NotificationSchedulerClient: NotificationScheduling {
+    func requestPermission() async -> Bool { false }
+    func authorizationGranted() async -> Bool { false }
+}
