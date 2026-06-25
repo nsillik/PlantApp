@@ -37,6 +37,8 @@ protocol CareScheduleRepository: Sendable {
     func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws
     /// Returns all care events for a given plant, sorted by timestamp descending.
     func fetchCareEvents(plantID: UUID) async throws -> [CareEvent]
+    /// Returns all care events across all plants since the given date.
+    func fetchAllCareEvents(since date: Date) async throws -> [CareEvent]
 }
 
 /// Persistence operations for care events.
@@ -143,6 +145,10 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
 
     func fetchCareEvents(plantID: UUID) async throws -> [CareEvent] {
         try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
+    }
+
+    func fetchAllCareEvents(since date: Date) async throws -> [CareEvent] {
+        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "timestamp >= %@", date as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
     }
 }
 
@@ -286,6 +292,7 @@ struct CareScheduleRepositoryClient: CareScheduleRepository {
     func fetch(plantID _: UUID) async throws -> CareSchedule? { nil }
     func fetchAll() async throws -> [CareSchedule] { [] }
     func fetchCareEvents(plantID _: UUID) async throws -> [CareEvent] { [] }
+    func fetchAllCareEvents(since _: Date) async throws -> [CareEvent] { [] }
 }
 
 @DependencyClient

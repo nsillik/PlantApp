@@ -332,7 +332,7 @@ struct CareTask: Identifiable, Sendable, Equatable {
         case completed
     }
 
-    let id: UUID
+    var id: String { "\(plantID.uuidString)-\(eventType.rawValue)" }
     /// The plant this task is for.
     var plantID: UUID
     /// Display name of the plant.

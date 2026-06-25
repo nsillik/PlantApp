@@ -39,7 +39,7 @@ final class HomeViewModel {
         return careTasks.filter { $0.dueDate >= startOfTomorrow && $0.dueDate < endOfWindow && !$0.isOverdue }
     }
 
-    func loadAll(completedTasks: Set<CareTaskKey> = []) async {
+    func loadAll() async {
         isLoading = true
         errorMessage = nil
         do {
@@ -47,13 +47,15 @@ final class HomeViewModel {
             async let catalogTask = catalogService.loadCatalog()
             async let profileTask = profileRepository.fetch()
             async let schedulesTask = scheduleRepository.fetchAll()
+            async let eventsTask = scheduleRepository.fetchAllCareEvents(since: Calendar.current.startOfDay(for: Date()))
 
             plants = try await plantsTask
             catalog = try await catalogTask
             userProfile = try await profileTask
             let schedules = try await schedulesTask
+            let recentEvents = try await eventsTask
 
-            recomputeTasks(plants: plants, catalog: catalog, profile: userProfile, schedules: schedules, completedTasks: completedTasks)
+            recomputeTasks(plants: plants, catalog: catalog, profile: userProfile, schedules: schedules, recentEvents: recentEvents)
         } catch {
             errorMessage = String(localized: "Failed to load data.")
         }
@@ -72,8 +74,7 @@ final class HomeViewModel {
 
         do {
             try await scheduleRepository.recordCareEvent(event, updatingScheduleFor: plantID)
-            let completedKey = CareTaskKey(plantID: plantID, eventType: eventType)
-            await loadAll(completedTasks: [completedKey])
+            await loadAll()
             await reRegisterNotifications()
         } catch {
             errorMessage = String(localized: "Failed to log care event.")
@@ -118,11 +119,12 @@ final class HomeViewModel {
         catalog: [PlantSpecies],
         profile: UserProfile?,
         schedules: [CareSchedule],
-        completedTasks: Set<CareTaskKey> = []
+        recentEvents: [CareEvent]
     ) {
         let catMap = Dictionary(uniqueKeysWithValues: catalog.map { ($0.id, $0) })
         let scheduleMap = Dictionary(uniqueKeysWithValues: schedules.map { ($0.plantID, $0) })
         let season = profile.map { Season.current(latitude: $0.latitude) } ?? .spring
+        let completedKeys = Set(recentEvents.map { "\($0.plantID.uuidString)-\($0.eventType.rawValue)" })
 
         var allTasks: [CareTask] = []
         for plant in plants {
@@ -147,18 +149,12 @@ final class HomeViewModel {
 
         careTasks = allTasks.sorted { $0.dueDate < $1.dueDate }
             .map { task in
-                let key = CareTaskKey(plantID: task.plantID, eventType: task.eventType)
-                guard completedTasks.contains(key) else { return task }
+                guard completedKeys.contains(task.id) else { return task }
                 var updated = task
                 updated.status = .completed
                 return updated
             }
     }
-}
-
-struct CareTaskKey: Hashable {
-    let plantID: UUID
-    let eventType: CareEventType
 }
 
 struct HomeView: View {

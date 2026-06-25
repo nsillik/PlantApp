@@ -50,7 +50,6 @@ struct SchedulingEngine {
             }
             let status: CareTask.Status = .incomplete
             tasks.append(CareTask(
-                id: UUID(),
                 plantID: schedule.plantID,
                 plantName: plantName,
                 eventType: eventType,
