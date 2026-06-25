@@ -75,32 +75,3 @@ final class CareScheduleEntity: NSManagedObject {
         NSFetchRequest<CareScheduleEntity>(entityName: "CareScheduleEntity")
     }
 }
-
-@objc(JournalEntryEntity)
-final class JournalEntryEntity: NSManagedObject {
-    @NSManaged var id: UUID?
-    @NSManaged var plantID: UUID?
-    @NSManaged var date: Date?
-    @NSManaged var healthScore: Int16
-    @NSManaged var leafCount: Int32
-    @NSManaged var height: Double
-    @NSManaged var notes: String?
-    @NSManaged var photoData: Data?
-
-    @nonobjc static func fetchRequest() -> NSFetchRequest<JournalEntryEntity> {
-        NSFetchRequest<JournalEntryEntity>(entityName: "JournalEntryEntity")
-    }
-}
-
-@objc(EnvironmentalReadingEntity)
-final class EnvironmentalReadingEntity: NSManagedObject {
-    @NSManaged var id: UUID?
-    @NSManaged var date: Date?
-    @NSManaged var temperature: Double
-    @NSManaged var humidity: Double
-    @NSManaged var daylightHours: Double
-
-    @nonobjc static func fetchRequest() -> NSFetchRequest<EnvironmentalReadingEntity> {
-        NSFetchRequest<EnvironmentalReadingEntity>(entityName: "EnvironmentalReadingEntity")
-    }
-}

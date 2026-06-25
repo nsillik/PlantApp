@@ -1,4 +1,5 @@
 import Foundation
+import struct SwiftUI.Color
 
 /// The user's profile, used to derive climate-aware care recommendations.
 struct UserProfile: Identifiable, Sendable, Codable {
@@ -21,6 +22,10 @@ enum ClimateClassification: String, Sendable, Codable {
         case .tropical: String(localized: "Tropical")
         case .arid: String(localized: "Arid")
         }
+    }
+
+    var localizedClimateLabel: String {
+        String(localized: "climate.label.\(rawValue)")
     }
 }
 
@@ -221,7 +226,8 @@ struct AlternativeLabel: Sendable, Equatable {
 }
 
 /// A detected plant region in a camera frame, in normalized (0–1) coordinates.
-struct DetectedBoundingBox: Sendable, Equatable {
+struct DetectedBoundingBox: Identifiable, Sendable, Equatable {
+    var id: String { "\(normalizedRect.origin.x),\(normalizedRect.origin.y),\(normalizedRect.width),\(normalizedRect.height)" }
     let normalizedRect: CGRect
     let confidence: Double
 }
@@ -247,11 +253,49 @@ struct CareEvent: Identifiable, Sendable, Codable {
 }
 
 /// Kinds of care actions that can be logged.
-enum CareEventType: String, Sendable, Codable {
+enum CareEventType: String, Sendable, Codable, CaseIterable {
     case watered
     case fertilized
     case pruned
     case repotted
+}
+
+extension CareEventType {
+    var localizedLabel: String {
+        switch self {
+        case .watered: String(localized: "Watering")
+        case .fertilized: String(localized: "Fertilizing")
+        case .pruned: String(localized: "Pruning")
+        case .repotted: String(localized: "Repotting")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .watered: "drop.fill"
+        case .fertilized: "leaf.arrow.circlepath"
+        case .pruned: "scissors"
+        case .repotted: "tray.full"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .watered: .blue
+        case .fertilized: .green
+        case .pruned: .orange
+        case .repotted: .brown
+        }
+    }
+
+    var scheduleKeyPath: WritableKeyPath<CareSchedule, Date?> {
+        switch self {
+        case .watered: \.lastWatered
+        case .fertilized: \.lastFertilized
+        case .pruned: \.lastPruned
+        case .repotted: \.lastRepotted
+        }
+    }
 }
 
 /// Tracks the most recent care dates for a plant to drive reminders.
@@ -267,23 +311,15 @@ struct CareSchedule: Identifiable, Sendable, Codable {
     var adherenceOffset: Int
 }
 
-/// A growth or health observation logged for a plant.
-struct JournalEntry: Identifiable, Sendable, Codable {
-    let id: UUID
-    /// The plant being observed.
-    var plantID: UUID
-    /// The date of the observation.
-    var date: Date
-    /// Overall health rating from 1 (worst) to 10 (best).
-    var healthScore: Int
-    /// Leaf count at the time of observation.
-    var leafCount: Int
-    /// Plant height in centimeters.
-    var height: Double
-    /// Freeform observation notes.
-    var notes: String?
-    /// Optional photo taken during the observation.
-    var photoData: Data?
+extension CareSchedule {
+    mutating func recordEvent(_ type: CareEventType, on date: Date) {
+        let keyPath = type.scheduleKeyPath
+        if let last = self[keyPath: keyPath] {
+            let daysLate = Calendar.current.dateComponents([.day], from: last, to: date).day ?? 0
+            adherenceOffset = max(0, adherenceOffset + daysLate / 3 - 1)
+        }
+        self[keyPath: keyPath] = date
+    }
 }
 
 /// A resolved city from a user's search query.
@@ -301,7 +337,7 @@ struct CareTask: Identifiable, Sendable, Equatable {
         case completed
     }
 
-    let id: UUID
+    var id: String { "\(plantID.uuidString)-\(eventType.rawValue)" }
     /// The plant this task is for.
     var plantID: UUID
     /// Display name of the plant.
@@ -314,17 +350,4 @@ struct CareTask: Identifiable, Sendable, Equatable {
     var isOverdue: Bool { status == .incomplete && dueDate < Date.now }
     /// Current completion status of this task instance.
     var status: Status
-}
-
-/// An environmental data point, sourced from device sensors or weather APIs.
-struct EnvironmentalReading: Identifiable, Sendable, Codable {
-    let id: UUID
-    /// When the reading was captured.
-    var date: Date
-    /// Temperature in degrees Celsius.
-    var temperature: Double
-    /// Relative humidity as a percentage (0–100).
-    var humidity: Double
-    /// Hours of daylight for the given date and location.
-    var daylightHours: Double
 }

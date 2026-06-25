@@ -13,7 +13,6 @@ struct SchedulingEngine {
     /// - Parameters:
     ///   - schedule: The plant's care schedule (last-event dates, adherence offset).
     ///   - species: The plant's species definition (base intervals from catalog).
-    ///   - careSheet: Care-sheet text (reserved for future use; not yet factored into due dates).
     ///   - season: The current growing season, which may shorten or lengthen watering intervals.
     ///   - plantName: Display name, propagated into each ``CareTask``.
     ///   - now: The reference "current" date — typically ``Date()``, but injected for determinism.
@@ -22,7 +21,6 @@ struct SchedulingEngine {
     func nextDueDates(
         schedule: CareSchedule,
         species: PlantSpecies,
-        careSheet: CareSheet,
         season: Season,
         plantName: String,
         now: Date
@@ -52,7 +50,6 @@ struct SchedulingEngine {
             }
             let status: CareTask.Status = .incomplete
             tasks.append(CareTask(
-                id: UUID(),
                 plantID: schedule.plantID,
                 plantName: plantName,
                 eventType: eventType,

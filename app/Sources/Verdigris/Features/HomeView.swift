@@ -11,7 +11,6 @@ final class HomeViewModel {
     var isLoading = false
     var isLogging = false
     var errorMessage: String?
-    var showCatalog = false
 
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
@@ -22,11 +21,14 @@ final class HomeViewModel {
     @ObservationIgnored
     @Dependency(\.careScheduleRepository) private var scheduleRepository
     @ObservationIgnored
-    @Dependency(\.careEventRepository) private var eventRepository
-    @ObservationIgnored
     @Dependency(\.notificationScheduling) private var scheduler
 
     private let engine = SchedulingEngine()
+
+    func checkNotificationPermissionIfNeeded() async -> Bool {
+        guard !careTasks.isEmpty else { return false }
+        return !(await scheduler.authorizationGranted())
+    }
 
     var todayTasks: [CareTask] {
         let startOfDay = Calendar.current.startOfDay(for: Date())
@@ -41,7 +43,7 @@ final class HomeViewModel {
         return careTasks.filter { $0.dueDate >= startOfTomorrow && $0.dueDate < endOfWindow && !$0.isOverdue }
     }
 
-    func loadAll(completedTasks: Set<CareTaskKey> = []) async {
+    func loadAll() async {
         isLoading = true
         errorMessage = nil
         do {
@@ -49,13 +51,15 @@ final class HomeViewModel {
             async let catalogTask = catalogService.loadCatalog()
             async let profileTask = profileRepository.fetch()
             async let schedulesTask = scheduleRepository.fetchAll()
+            async let eventsTask = scheduleRepository.fetchAllCareEvents(since: Calendar.current.startOfDay(for: Date()))
 
             plants = try await plantsTask
             catalog = try await catalogTask
             userProfile = try await profileTask
             let schedules = try await schedulesTask
+            let recentEvents = try await eventsTask
 
-            recomputeTasks(plants: plants, catalog: catalog, profile: userProfile, schedules: schedules, completedTasks: completedTasks)
+            recomputeTasks(plants: plants, catalog: catalog, profile: userProfile, schedules: schedules, recentEvents: recentEvents)
         } catch {
             errorMessage = String(localized: "Failed to load data.")
         }
@@ -73,50 +77,8 @@ final class HomeViewModel {
         )
 
         do {
-            try await eventRepository.save(event)
-
-            let schedule = try await scheduleRepository.fetch(plantID: plantID)
-            var updated = schedule ?? CareSchedule(
-                id: UUID(),
-                plantID: plantID,
-                lastWatered: nil,
-                lastFertilized: nil,
-                lastPruned: nil,
-                lastRepotted: nil,
-                adherenceOffset: 0
-            )
-
-            switch eventType {
-            case .watered:
-                if let last = updated.lastWatered {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastWatered = Date()
-            case .fertilized:
-                if let last = updated.lastFertilized {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastFertilized = Date()
-            case .pruned:
-                if let last = updated.lastPruned {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastPruned = Date()
-            case .repotted:
-                if let last = updated.lastRepotted {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastRepotted = Date()
-            }
-
-            try await scheduleRepository.save(updated)
-
-            let completedKey = CareTaskKey(plantID: plantID, eventType: eventType)
-            await loadAll(completedTasks: [completedKey])
+            try await scheduleRepository.recordCareEvent(event, updatingScheduleFor: plantID)
+            await loadAll()
             await reRegisterNotifications()
         } catch {
             errorMessage = String(localized: "Failed to log care event.")
@@ -147,7 +109,6 @@ final class HomeViewModel {
             allTasks += engine.nextDueDates(
                 schedule: schedule,
                 species: species,
-                careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
                 season: season,
                 plantName: plant.name,
                 now: Date()
@@ -162,11 +123,12 @@ final class HomeViewModel {
         catalog: [PlantSpecies],
         profile: UserProfile?,
         schedules: [CareSchedule],
-        completedTasks: Set<CareTaskKey> = []
+        recentEvents: [CareEvent]
     ) {
         let catMap = Dictionary(uniqueKeysWithValues: catalog.map { ($0.id, $0) })
         let scheduleMap = Dictionary(uniqueKeysWithValues: schedules.map { ($0.plantID, $0) })
         let season = profile.map { Season.current(latitude: $0.latitude) } ?? .spring
+        let completedKeys = Set(recentEvents.map { "\($0.plantID.uuidString)-\($0.eventType.rawValue)" })
 
         var allTasks: [CareTask] = []
         for plant in plants {
@@ -183,7 +145,6 @@ final class HomeViewModel {
             allTasks += engine.nextDueDates(
                 schedule: schedule,
                 species: species,
-                careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
                 season: season,
                 plantName: plant.name,
                 now: Date()
@@ -192,8 +153,7 @@ final class HomeViewModel {
 
         careTasks = allTasks.sorted { $0.dueDate < $1.dueDate }
             .map { task in
-                let key = CareTaskKey(plantID: task.plantID, eventType: task.eventType)
-                guard completedTasks.contains(key) else { return task }
+                guard completedKeys.contains(task.id) else { return task }
                 var updated = task
                 updated.status = .completed
                 return updated
@@ -201,16 +161,11 @@ final class HomeViewModel {
     }
 }
 
-struct CareTaskKey: Hashable {
-    let plantID: UUID
-    let eventType: CareEventType
-}
-
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var showSettings = false
+    @State private var showCatalog = false
     @State private var showNotificationAlert = false
-    @State private var hasShownNotificationPrompt = false
     @State private var showCameraFlow = false
     @State private var savedPlant: Plant?
     let onboardingCoordinator: OnboardingCoordinator
@@ -250,7 +205,7 @@ struct HomeView: View {
                         Image(systemName: "camera")
                     }
                     Button(String(localized: "Add")) {
-                        viewModel.showCatalog = true
+                        showCatalog = true
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -261,9 +216,9 @@ struct HomeView: View {
                     }
                 }
             }
-            .sheet(isPresented: $viewModel.showCatalog) {
+            .sheet(isPresented: $showCatalog) {
                 CatalogBrowseView { _, _ in
-                    viewModel.showCatalog = false
+                    showCatalog = false
                     Task { await viewModel.loadAll() }
                 }
             }
@@ -292,9 +247,6 @@ struct HomeView: View {
         }
         .task {
             await viewModel.loadAll()
-        }
-        .onChange(of: viewModel.showCatalog) { _, showing in
-            if !showing { Task { await viewModel.loadAll() } }
         }
         .refreshable {
             await viewModel.loadAll()
@@ -359,17 +311,12 @@ struct HomeView: View {
             }
         }
         .onAppear {
-            if viewModel.careTasks.isEmpty && !viewModel.plants.isEmpty {
-                Task { await viewModel.loadAll() }
-            }
-            if !hasShownNotificationPrompt && !viewModel.careTasks.isEmpty {
+            if !viewModel.careTasks.isEmpty {
                 Task {
-                    @Dependency(\.notificationScheduling) var scheduler
-                    if !(await scheduler.authorizationGranted()) {
+                    if await viewModel.checkNotificationPermissionIfNeeded() {
                         showNotificationAlert = true
                     }
                 }
-                hasShownNotificationPrompt = true
             }
         }
     }
@@ -417,7 +364,7 @@ private struct TaskRow: View {
             Image(systemName: imageName)
                 .foregroundStyle(imageColor)
             VStack(alignment: .leading) {
-                Text(taskLabel(for: task.eventType))
+                Text(task.eventType.localizedLabel)
                     .font(.subheadline)
                     .fontWeight(task.isOverdue ? .bold : .regular)
                     .strikethrough(task.status == .completed)
@@ -455,19 +402,13 @@ private struct TaskRow: View {
         case .incomplete: task.isOverdue ? .red : .secondary
         }
     }
-
-    private func taskLabel(for type: CareEventType) -> String {
-        switch type {
-        case .watered: String(localized: "Watering")
-        case .fertilized: String(localized: "Fertilizing")
-        case .pruned: String(localized: "Pruning")
-        case .repotted: String(localized: "Repotting")
-        }
-    }
 }
 
-struct PlantRowView: View {
-    let plant: Plant
+struct ThumbnailRow: View {
+    let title: String
+    let subtitle: String?
+    let systemImage: String
+    let imageColor: Color
 
     var body: some View {
         HStack(spacing: 12) {
@@ -475,20 +416,33 @@ struct PlantRowView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(.systemGray5))
                     .frame(width: 44, height: 44)
-                Image(systemName: "leaf")
+                Image(systemName: systemImage)
                     .font(.title3)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(imageColor)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(plant.name)
+                Text(title)
                     .font(.headline)
-                if let light = plant.placementLight?.label {
-                    Text(String(localized: "\(light) light"))
+                if let subtitle {
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct PlantRowView: View {
+    let plant: Plant
+
+    var body: some View {
+        ThumbnailRow(
+            title: plant.name,
+            subtitle: plant.placementLight.map { String(localized: "\($0.label) light") },
+            systemImage: "leaf",
+            imageColor: .green
+        )
     }
 }

@@ -6,13 +6,13 @@ struct CareEventHistoryView: View {
     var body: some View {
         ForEach(events) { event in
             HStack(spacing: 12) {
-                Image(systemName: icon(for: event.eventType))
+                Image(systemName: event.eventType.systemImage)
                     .font(.title3)
-                    .foregroundStyle(color(for: event.eventType))
+                    .foregroundStyle(event.eventType.tint)
                     .frame(width: 32)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label(for: event.eventType))
+                    Text(event.eventType.localizedLabel)
                         .font(.subheadline)
                         .fontWeight(.medium)
                     Text(event.timestamp, style: .date)
@@ -36,33 +36,6 @@ struct CareEventHistoryView: View {
                 }
             }
             .padding(.vertical, 4)
-        }
-    }
-
-    private func icon(for type: CareEventType) -> String {
-        switch type {
-        case .watered: "drop.fill"
-        case .fertilized: "leaf.arrow.circlepath"
-        case .pruned: "scissors"
-        case .repotted: "tray.full"
-        }
-    }
-
-    private func color(for type: CareEventType) -> Color {
-        switch type {
-        case .watered: .blue
-        case .fertilized: .green
-        case .pruned: .orange
-        case .repotted: .brown
-        }
-    }
-
-    private func label(for type: CareEventType) -> String {
-        switch type {
-        case .watered: String(localized: "Watered")
-        case .fertilized: String(localized: "Fertilized")
-        case .pruned: String(localized: "Pruned")
-        case .repotted: String(localized: "Repotted")
         }
     }
 }

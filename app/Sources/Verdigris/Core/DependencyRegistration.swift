@@ -62,163 +62,50 @@ private enum PlantRepositoryKey: DependencyKey {
     static let liveValue: PlantRepository = CoreDataPlantRepository(
         persistenceService: PersistenceController.shared
     )
-
-    static let testValue: PlantRepository = UnimplementedPlantRepository()
+    static let testValue: PlantRepository = PlantRepositoryClient()
 }
 
 private enum CatalogServiceKey: DependencyKey {
     static let liveValue: CatalogService = BundleCatalogService()
-    static let testValue: CatalogService = UnimplementedCatalogService()
-}
-
-private struct UnimplementedCatalogService: CatalogService {
-    func loadCatalog() async throws -> [PlantSpecies] {
-        reportIssue("Unimplemented")
-        return []
-    }
+    static let testValue: CatalogService = CatalogServiceClient()
 }
 
 private enum CitySearchServiceKey: DependencyKey {
     static let liveValue: CitySearchService = {
         MainActor.assumeIsolated { MapKitCitySearchService() }
     }()
-    static let testValue: CitySearchService = UnimplementedCitySearchService()
-}
-
-private struct UnimplementedCitySearchService: CitySearchService {
-    func search(query: String) async throws -> [CitySuggestion] {
-        reportIssue("Unimplemented")
-        throw CitySearchError.notFound
-    }
-
-    func resolve(_ suggestion: CitySuggestion) async throws -> City {
-        reportIssue("Unimplemented")
-        throw CitySearchError.resolutionFailed
-    }
+    static let testValue: CitySearchService = CitySearchServiceClient()
 }
 
 private enum ClimateServiceKey: DependencyKey {
     static let liveValue: ClimateService = LiveClimateService()
-    static let testValue: ClimateService = UnimplementedClimateService()
-}
-
-private struct UnimplementedClimateService: ClimateService {
-    func climateClassification(for city: City) -> ClimateClassification {
-        reportIssue("Unimplemented")
-        return .temperate
-    }
+    static let testValue: ClimateService = ClimateServiceClient()
 }
 
 private enum UserProfileRepositoryKey: DependencyKey {
     static let liveValue: UserProfileRepository = CoreDataUserProfileRepository(
         persistenceService: PersistenceController.shared
     )
-
-    static let testValue: UserProfileRepository = UnimplementedUserProfileRepository()
+    static let testValue: UserProfileRepository = UserProfileRepositoryClient()
 }
 
 private enum CareScheduleRepositoryKey: DependencyKey {
     static let liveValue: CareScheduleRepository = CoreDataCareScheduleRepository(
         persistenceService: PersistenceController.shared
     )
-
-    static let testValue: CareScheduleRepository = UnimplementedCareScheduleRepository()
+    static let testValue: CareScheduleRepository = CareScheduleRepositoryClient()
 }
 
 private enum CareEventRepositoryKey: DependencyKey {
     static let liveValue: CareEventRepository = CoreDataCareEventRepository(
         persistenceService: PersistenceController.shared
     )
-
-    static let testValue: CareEventRepository = UnimplementedCareEventRepository()
+    static let testValue: CareEventRepository = CareEventRepositoryClient()
 }
 
 private enum NotificationSchedulingKey: DependencyKey {
     static let liveValue: NotificationScheduling = NotificationScheduler()
-    static let testValue: NotificationScheduling = UnimplementedNotificationScheduler()
-}
-
-private struct UnimplementedPlantRepository: PlantRepository {
-    func fetchAll() async throws -> [Plant] {
-        reportIssue("Unimplemented")
-        return []
-    }
-
-    func fetch(id: UUID) async throws -> Plant? {
-        reportIssue("Unimplemented")
-        return nil
-    }
-
-    func save(_ plant: Plant) async throws {
-        reportIssue("Unimplemented")
-    }
-
-    func delete(_ plant: Plant) async throws {
-        reportIssue("Unimplemented")
-    }
-}
-
-private struct UnimplementedUserProfileRepository: UserProfileRepository {
-    func fetch() async throws -> UserProfile? {
-        reportIssue("Unimplemented")
-        return nil
-    }
-
-    func save(_ profile: UserProfile) async throws {
-        reportIssue("Unimplemented")
-    }
-}
-
-private struct UnimplementedCareScheduleRepository: CareScheduleRepository {
-    func fetch(plantID: UUID) async throws -> CareSchedule? {
-        reportIssue("Unimplemented")
-        return nil
-    }
-
-    func fetchAll() async throws -> [CareSchedule] {
-        reportIssue("Unimplemented")
-        return []
-    }
-
-    func save(_ schedule: CareSchedule) async throws {
-        reportIssue("Unimplemented")
-    }
-}
-
-private struct UnimplementedCareEventRepository: CareEventRepository {
-    func fetch(plantID: UUID) async throws -> [CareEvent] {
-        reportIssue("Unimplemented")
-        return []
-    }
-
-    func fetchAll() async throws -> [CareEvent] {
-        reportIssue("Unimplemented")
-        return []
-    }
-
-    func save(_ event: CareEvent) async throws {
-        reportIssue("Unimplemented")
-    }
-}
-
-private struct UnimplementedNotificationScheduler: NotificationScheduling {
-    func requestPermission() async -> Bool {
-        reportIssue("Unimplemented")
-        return false
-    }
-
-    func authorizationGranted() async -> Bool {
-        reportIssue("Unimplemented")
-        return false
-    }
-
-    func registerTasks(_ tasks: [CareTask]) async {
-        reportIssue("Unimplemented")
-    }
-
-    func removeAll() {
-        reportIssue("Unimplemented")
-    }
+    static let testValue: NotificationScheduling = NotificationSchedulerClient()
 }
 
 private enum PlantIdentificationServiceKey: DependencyKey {

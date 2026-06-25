@@ -16,6 +16,7 @@ final class PlantDetailViewModel {
     var careSheet: CareSheet?
     var careEvents: [CareEvent] = []
     var isLoadingEvents = false
+    var errorMessage: String?
     var pendingEvent: PendingCareEvent?
     var pendingEventNotes: String = ""
     var pendingEventPhotoData: Data?
@@ -26,8 +27,6 @@ final class PlantDetailViewModel {
     @Dependency(\.userProfileRepository) private var profileRepository
     @ObservationIgnored
     @Dependency(\.catalogService) private var catalogService
-    @ObservationIgnored
-    @Dependency(\.careEventRepository) private var eventRepository
     @ObservationIgnored
     @Dependency(\.careScheduleRepository) private var scheduleRepository
 
@@ -44,7 +43,7 @@ final class PlantDetailViewModel {
         do {
             async let allSpecies = catalogService.loadCatalog()
             async let profile = profileRepository.fetch()
-            async let events = eventRepository.fetch(plantID: plant.id)
+            async let events = scheduleRepository.fetchCareEvents(plantID: plant.id)
 
             catalogSpecies = try await allSpecies.first { $0.id == plant.speciesID }
             userProfile = try await profile
@@ -59,45 +58,42 @@ final class PlantDetailViewModel {
     }
 
     func updatePlacement(light: LightPlacement) {
-        plant.placementLight = light
-        regenerateCareSheet()
         Task {
+            var updated = plant
+            updated.placementLight = light
             do {
-                try await repository.save(plant)
+                try await repository.save(updated)
+                plant = updated
+                regenerateCareSheet()
             } catch {
-                reportIssue("""
-                  Failed to save light placement for \(plant.id): \
-                  \(error.localizedDescription)
-                  """)
+                errorMessage = "Failed to save light placement."
             }
         }
     }
 
     func updatePlacement(humidity: HumidityPlacement) {
-        plant.placementHumidity = humidity
-        regenerateCareSheet()
         Task {
+            var updated = plant
+            updated.placementHumidity = humidity
             do {
-                try await repository.save(plant)
+                try await repository.save(updated)
+                plant = updated
+                regenerateCareSheet()
             } catch {
-                reportIssue("""
-                  Failed to save humidity placement for \(plant.id): \
-                  \(error.localizedDescription)
-                  """)
+                errorMessage = "Failed to save humidity placement."
             }
         }
     }
 
     func updateName(_ name: String) {
-        plant.name = name
         Task {
+            var updated = plant
+            updated.name = name
             do {
-                try await repository.save(plant)
+                try await repository.save(updated)
+                plant = updated
             } catch {
-                reportIssue("""
-                  Failed to save plant name for \(plant.id): \
-                  \(error.localizedDescription)
-                  """)
+                errorMessage = "Failed to save plant name."
             }
         }
     }
@@ -109,51 +105,25 @@ final class PlantDetailViewModel {
     }
 
     func confirmCareEvent() async {
-        guard let pendingEvent else { return }
+        guard let currentPending = pendingEvent else { return }
 
         let event = CareEvent(
-            id: pendingEvent.id,
+            id: currentPending.id,
             plantID: plant.id,
-            eventType: pendingEvent.eventType,
+            eventType: currentPending.eventType,
             timestamp: Date(),
             photoData: pendingEventPhotoData,
             notes: pendingEventNotes.isEmpty ? nil : pendingEventNotes
         )
 
-        let eventType = pendingEvent.eventType
-        self.pendingEvent = nil
-        pendingEventPhotoData = nil
-        pendingEventNotes = ""
-
         do {
-            try await eventRepository.save(event)
+            try await scheduleRepository.recordCareEvent(event, updatingScheduleFor: plant.id)
             careEvents.insert(event, at: 0)
-
-            let schedule = try await scheduleRepository.fetch(plantID: plant.id)
-            var updated = schedule ?? CareSchedule(
-                id: UUID(),
-                plantID: plant.id,
-                lastWatered: nil,
-                lastFertilized: nil,
-                lastPruned: nil,
-                lastRepotted: nil,
-                adherenceOffset: 0
-            )
-
-            switch eventType {
-            case .watered:
-                updated.lastWatered = Date()
-            case .fertilized:
-                updated.lastFertilized = Date()
-            case .pruned:
-                updated.lastPruned = Date()
-            case .repotted:
-                updated.lastRepotted = Date()
-            }
-
-            try await scheduleRepository.save(updated)
+            self.pendingEvent = nil
+            pendingEventPhotoData = nil
+            pendingEventNotes = ""
         } catch {
-            reportIssue("Failed to log care event: \(error)")
+            errorMessage = "Failed to log care event."
         }
     }
 
@@ -211,106 +181,23 @@ struct PlantDetailView: View {
         self._viewModel = State(initialValue: PlantDetailViewModel(plant: plant))
     }
 
+    init(viewModel: PlantDetailViewModel) {
+        self._viewModel = State(initialValue: viewModel)
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TextField(String(localized: "Plant Name"), text: Binding(
-                    get: { viewModel.editableName },
-                    set: { viewModel.updateName($0) }
-                ))
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .textFieldStyle(.plain)
-
-                if let species = viewModel.catalogSpecies {
-                    Text(species.name.localizedName)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    if let scientific = species.scientificName {
-                        Text(scientific)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .italic()
-                    }
-                }
-
+                headerSection
                 Divider()
-
-                Text(String(localized: "Care Actions"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    CareActionButton(title: String(localized: "Watered"), icon: "drop.fill", color: .blue) {
-                        viewModel.beginLogCareEvent(.watered)
-                    }
-                    CareActionButton(title: String(localized: "Fertilized"), icon: "leaf.arrow.circlepath", color: .green) {
-                        viewModel.beginLogCareEvent(.fertilized)
-                    }
-                    CareActionButton(title: String(localized: "Pruned"), icon: "scissors", color: .orange) {
-                        viewModel.beginLogCareEvent(.pruned)
-                    }
-                    CareActionButton(title: String(localized: "Repotted"), icon: "tray.full", color: .brown) {
-                        viewModel.beginLogCareEvent(.repotted)
-                    }
-                }
-
+                careActionsSection
                 Divider()
-
-                Text(String(localized: "Placement"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(String(localized: "Light"))
-                        .font(.headline)
-                    Picker(String(localized: "Light"), selection: Binding(
-                        get: { viewModel.plant.placementLight ?? .indirect },
-                        set: { viewModel.updatePlacement(light: $0) }
-                    )) {
-                        ForEach(LightPlacement.allCases, id: \.self) { placement in
-                            Text(placement.label).tag(placement)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Text(String(localized: "Humidity"))
-                        .font(.headline)
-                    Picker(String(localized: "Humidity"), selection: Binding(
-                        get: { viewModel.plant.placementHumidity ?? .normal },
-                        set: { viewModel.updatePlacement(humidity: $0) }
-                    )) {
-                        ForEach(HumidityPlacement.allCases, id: \.self) { placement in
-                            Text(placement.label).tag(placement)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
+                placementSection
                 Divider()
-
-                Text(String(localized: "Care Guide"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                if let careSheet = viewModel.careSheet {
-                    CareSheetView(careSheet: careSheet)
-                } else {
-                    ContentUnavailableView(
-                        String(localized: "Loading…"),
-                        systemImage: "leaf",
-                        description: Text(String(localized: "Generating your care guide."))
-                    )
-                }
-
+                careGuideSection
                 if !viewModel.careEvents.isEmpty {
                     Divider()
-
-                    Text(String(localized: "Care History"))
-                        .font(.title2)
-                        .fontWeight(.semibold)
-
-                    CareEventHistoryView(events: viewModel.careEvents)
+                    historySection
                 }
             }
             .padding()
@@ -320,6 +207,105 @@ struct PlantDetailView: View {
         }
         .sheet(item: $viewModel.pendingEvent) { pendingEvent in
             CareEventConfirmationView(viewModel: viewModel, pendingEvent: pendingEvent)
+        }
+    }
+
+    @ViewBuilder
+    private var headerSection: some View {
+        TextField(String(localized: "Plant Name"), text: Binding(
+            get: { viewModel.editableName },
+            set: { viewModel.updateName($0) }
+        ))
+        .font(.largeTitle)
+        .fontWeight(.bold)
+        .textFieldStyle(.plain)
+
+        if let species = viewModel.catalogSpecies {
+            Text(species.name.localizedName)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            if let scientific = species.scientificName {
+                Text(scientific)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .italic()
+            }
+        }
+    }
+
+    private var careActionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Care Actions"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(CareEventType.allCases, id: \.self) { eventType in
+                    CareActionButton(
+                        title: eventType.localizedLabel,
+                        icon: eventType.systemImage,
+                        color: eventType.tint
+                    ) {
+                        viewModel.beginLogCareEvent(eventType)
+                    }
+                }
+            }
+        }
+    }
+
+    private var placementSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Placement"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            Text(String(localized: "Light"))
+                .font(.headline)
+            Picker(String(localized: "Light"), selection: Binding(
+                get: { viewModel.plant.placementLight ?? .indirect },
+                set: { viewModel.updatePlacement(light: $0) }
+            )) {
+                ForEach(LightPlacement.allCases, id: \.self) { placement in
+                    Text(placement.label).tag(placement)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text(String(localized: "Humidity"))
+                .font(.headline)
+            Picker(String(localized: "Humidity"), selection: Binding(
+                get: { viewModel.plant.placementHumidity ?? .normal },
+                set: { viewModel.updatePlacement(humidity: $0) }
+            )) {
+                ForEach(HumidityPlacement.allCases, id: \.self) { placement in
+                    Text(placement.label).tag(placement)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var careGuideSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Care Guide"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            if let careSheet = viewModel.careSheet {
+                CareSheetView(careSheet: careSheet)
+            } else {
+                ContentUnavailableView(
+                    String(localized: "Loading…"),
+                    systemImage: "leaf",
+                    description: Text(String(localized: "Generating your care guide."))
+                )
+            }
+        }
+    }
+
+    private var historySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Care History"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            CareEventHistoryView(events: viewModel.careEvents)
         }
     }
 }

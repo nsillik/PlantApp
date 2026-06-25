@@ -23,9 +23,9 @@ struct Phase2SnapshotTests {
 
         viewModel.plants = [plant]
         viewModel.careTasks = [
-            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .watered, dueDate: now, status: .incomplete),
-            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .fertilized, dueDate: todayEnd, status: .incomplete),
-            CareTask(id: UUID(), plantID: plant.id, plantName: "Monstera", eventType: .pruned, dueDate: tomorrow, status: .incomplete),
+            CareTask(plantID: plant.id, plantName: "Monstera", eventType: .watered, dueDate: now, status: .incomplete),
+            CareTask(plantID: plant.id, plantName: "Monstera", eventType: .fertilized, dueDate: todayEnd, status: .incomplete),
+            CareTask(plantID: plant.id, plantName: "Monstera", eventType: .pruned, dueDate: tomorrow, status: .incomplete),
         ]
 
         let view = HomeView(viewModel: viewModel, onboardingCoordinator: coordinator)
@@ -37,6 +37,7 @@ struct Phase2SnapshotTests {
             $0.careScheduleRepository = MockNoopScheduleRepository()
             $0.careEventRepository = MockNoopEventRepository()
             $0.userProfileRepository = MockNoopProfileRepository()
+            $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
             withSnapshotTesting(record: SnapshotRecord.mode) {
                 assertSnapshot(of: hostingController, as: .image(on: .iPhone13Pro))

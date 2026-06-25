@@ -14,10 +14,10 @@ struct CareEventConfirmationView: View {
             Form {
                 Section {
                     HStack(spacing: 12) {
-                        Image(systemName: icon(for: pendingEvent.eventType))
+                        Image(systemName: pendingEvent.eventType.systemImage)
                             .font(.title)
-                            .foregroundStyle(color(for: pendingEvent.eventType))
-                        Text(label(for: pendingEvent.eventType))
+                            .foregroundStyle(pendingEvent.eventType.tint)
+                        Text(pendingEvent.eventType.localizedLabel)
                             .font(.title2)
                             .fontWeight(.semibold)
                     }
@@ -90,33 +90,6 @@ struct CareEventConfirmationView: View {
                 viewModel.handleCameraCapture(image)
                 showCameraCapture = false
             }
-        }
-    }
-
-    private func icon(for type: CareEventType) -> String {
-        switch type {
-        case .watered: "drop.fill"
-        case .fertilized: "leaf.arrow.circlepath"
-        case .pruned: "scissors"
-        case .repotted: "tray.full"
-        }
-    }
-
-    private func color(for type: CareEventType) -> Color {
-        switch type {
-        case .watered: .blue
-        case .fertilized: .green
-        case .pruned: .orange
-        case .repotted: .brown
-        }
-    }
-
-    private func label(for type: CareEventType) -> String {
-        switch type {
-        case .watered: String(localized: "Watered")
-        case .fertilized: String(localized: "Fertilized")
-        case .pruned: String(localized: "Pruned")
-        case .repotted: String(localized: "Repotted")
         }
     }
 }

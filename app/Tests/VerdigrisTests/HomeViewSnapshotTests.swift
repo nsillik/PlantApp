@@ -19,6 +19,7 @@ struct HomeViewSnapshotTests {
             $0.careScheduleRepository = MockNoopScheduleRepository()
             $0.careEventRepository = MockNoopEventRepository()
             $0.userProfileRepository = MockNoopProfileRepository()
+            $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
             withSnapshotTesting(record: SnapshotRecord.mode) {
                 assertSnapshot(of: hostingController, as: .image(on: .iPhone13Pro))
@@ -39,6 +40,7 @@ struct HomeViewSnapshotTests {
             $0.careScheduleRepository = MockNoopScheduleRepository()
             $0.careEventRepository = MockNoopEventRepository()
             $0.userProfileRepository = MockNoopProfileRepository()
+            $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
             withSnapshotTesting(record: SnapshotRecord.mode) {
                 assertSnapshot(of: hostingController, as: .image(on: .iPhone13Pro))

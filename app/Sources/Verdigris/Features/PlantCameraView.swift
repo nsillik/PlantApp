@@ -7,10 +7,16 @@ import UIKit
 /// permission-denied prompt. Camera plumbing (AVFoundation session, shutter) is
 /// owned by `CameraPreviewView`; permission state is surfaced via `CameraViewModel`.
 struct PlantCameraView: View {
-    @State private var viewModel = CameraViewModel()
+    @State private var viewModel: CameraViewModel
     @State private var showCatalogSearch = false
     let onSpeciesConfirmed: (PlantSpecies) -> Void
     let onDismiss: () -> Void
+
+    init(viewModel: CameraViewModel = CameraViewModel(), onSpeciesConfirmed: @escaping (PlantSpecies) -> Void, onDismiss: @escaping () -> Void) {
+        self._viewModel = State(initialValue: viewModel)
+        self.onSpeciesConfirmed = onSpeciesConfirmed
+        self.onDismiss = onDismiss
+    }
 
     var body: some View {
         ZStack {
@@ -75,7 +81,7 @@ struct PlantCameraView: View {
 
     private var detectionOverlay: some View {
         GeometryReader { geometry in
-            ForEach(Array(viewModel.detectionResult.boundingBoxes.enumerated()), id: \.offset) { _, box in
+            ForEach(viewModel.detectionResult.boundingBoxes) { box in
                 let rect = normalizedToView(box.normalizedRect, in: geometry.size)
                 Rectangle()
                     .stroke(.green, lineWidth: 2)
