@@ -187,100 +187,16 @@ struct PlantDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                TextField(String(localized: "Plant Name"), text: Binding(
-                    get: { viewModel.editableName },
-                    set: { viewModel.updateName($0) }
-                ))
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .textFieldStyle(.plain)
-
-                if let species = viewModel.catalogSpecies {
-                    Text(species.name.localizedName)
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
-                    if let scientific = species.scientificName {
-                        Text(scientific)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .italic()
-                    }
-                }
-
+                headerSection
                 Divider()
-
-                Text(String(localized: "Care Actions"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    ForEach(CareEventType.allCases, id: \.self) { eventType in
-                        CareActionButton(
-                            title: eventType.localizedLabel,
-                            icon: eventType.systemImage,
-                            color: eventType.tint
-                        ) {
-                            viewModel.beginLogCareEvent(eventType)
-                        }
-                    }
-                }
-
+                careActionsSection
                 Divider()
-
-                Text(String(localized: "Placement"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(String(localized: "Light"))
-                        .font(.headline)
-                    Picker(String(localized: "Light"), selection: Binding(
-                        get: { viewModel.plant.placementLight ?? .indirect },
-                        set: { viewModel.updatePlacement(light: $0) }
-                    )) {
-                        ForEach(LightPlacement.allCases, id: \.self) { placement in
-                            Text(placement.label).tag(placement)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
-                    Text(String(localized: "Humidity"))
-                        .font(.headline)
-                    Picker(String(localized: "Humidity"), selection: Binding(
-                        get: { viewModel.plant.placementHumidity ?? .normal },
-                        set: { viewModel.updatePlacement(humidity: $0) }
-                    )) {
-                        ForEach(HumidityPlacement.allCases, id: \.self) { placement in
-                            Text(placement.label).tag(placement)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
-
+                placementSection
                 Divider()
-
-                Text(String(localized: "Care Guide"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
-
-                if let careSheet = viewModel.careSheet {
-                    CareSheetView(careSheet: careSheet)
-                } else {
-                    ContentUnavailableView(
-                        String(localized: "Loading…"),
-                        systemImage: "leaf",
-                        description: Text(String(localized: "Generating your care guide."))
-                    )
-                }
-
+                careGuideSection
                 if !viewModel.careEvents.isEmpty {
                     Divider()
-
-                    Text(String(localized: "Care History"))
-                        .font(.title2)
-                        .fontWeight(.semibold)
-
-                    CareEventHistoryView(events: viewModel.careEvents)
+                    historySection
                 }
             }
             .padding()
@@ -290,6 +206,105 @@ struct PlantDetailView: View {
         }
         .sheet(item: $viewModel.pendingEvent) { pendingEvent in
             CareEventConfirmationView(viewModel: viewModel, pendingEvent: pendingEvent)
+        }
+    }
+
+    @ViewBuilder
+    private var headerSection: some View {
+        TextField(String(localized: "Plant Name"), text: Binding(
+            get: { viewModel.editableName },
+            set: { viewModel.updateName($0) }
+        ))
+        .font(.largeTitle)
+        .fontWeight(.bold)
+        .textFieldStyle(.plain)
+
+        if let species = viewModel.catalogSpecies {
+            Text(species.name.localizedName)
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            if let scientific = species.scientificName {
+                Text(scientific)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .italic()
+            }
+        }
+    }
+
+    private var careActionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Care Actions"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(CareEventType.allCases, id: \.self) { eventType in
+                    CareActionButton(
+                        title: eventType.localizedLabel,
+                        icon: eventType.systemImage,
+                        color: eventType.tint
+                    ) {
+                        viewModel.beginLogCareEvent(eventType)
+                    }
+                }
+            }
+        }
+    }
+
+    private var placementSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Placement"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            Text(String(localized: "Light"))
+                .font(.headline)
+            Picker(String(localized: "Light"), selection: Binding(
+                get: { viewModel.plant.placementLight ?? .indirect },
+                set: { viewModel.updatePlacement(light: $0) }
+            )) {
+                ForEach(LightPlacement.allCases, id: \.self) { placement in
+                    Text(placement.label).tag(placement)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text(String(localized: "Humidity"))
+                .font(.headline)
+            Picker(String(localized: "Humidity"), selection: Binding(
+                get: { viewModel.plant.placementHumidity ?? .normal },
+                set: { viewModel.updatePlacement(humidity: $0) }
+            )) {
+                ForEach(HumidityPlacement.allCases, id: \.self) { placement in
+                    Text(placement.label).tag(placement)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private var careGuideSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Care Guide"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            if let careSheet = viewModel.careSheet {
+                CareSheetView(careSheet: careSheet)
+            } else {
+                ContentUnavailableView(
+                    String(localized: "Loading…"),
+                    systemImage: "leaf",
+                    description: Text(String(localized: "Generating your care guide."))
+                )
+            }
+        }
+    }
+
+    private var historySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "Care History"))
+                .font(.title2)
+                .fontWeight(.semibold)
+            CareEventHistoryView(events: viewModel.careEvents)
         }
     }
 }
