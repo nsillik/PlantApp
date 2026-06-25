@@ -11,7 +11,6 @@ final class HomeViewModel {
     var isLoading = false
     var isLogging = false
     var errorMessage: String?
-    var showCatalog = false
 
     @ObservationIgnored
     @Dependency(\.plantRepository) private var repository
@@ -25,6 +24,11 @@ final class HomeViewModel {
     @Dependency(\.notificationScheduling) private var scheduler
 
     private let engine = SchedulingEngine()
+
+    func checkNotificationPermissionIfNeeded() async -> Bool {
+        guard !careTasks.isEmpty else { return false }
+        return !(await scheduler.authorizationGranted())
+    }
 
     var todayTasks: [CareTask] {
         let startOfDay = Calendar.current.startOfDay(for: Date())
@@ -160,8 +164,8 @@ final class HomeViewModel {
 struct HomeView: View {
     @State private var viewModel: HomeViewModel
     @State private var showSettings = false
+    @State private var showCatalog = false
     @State private var showNotificationAlert = false
-    @State private var hasShownNotificationPrompt = false
     @State private var showCameraFlow = false
     @State private var savedPlant: Plant?
     let onboardingCoordinator: OnboardingCoordinator
@@ -201,7 +205,7 @@ struct HomeView: View {
                         Image(systemName: "camera")
                     }
                     Button(String(localized: "Add")) {
-                        viewModel.showCatalog = true
+                        showCatalog = true
                     }
                 }
                 ToolbarItem(placement: .topBarLeading) {
@@ -212,9 +216,9 @@ struct HomeView: View {
                     }
                 }
             }
-            .sheet(isPresented: $viewModel.showCatalog) {
+            .sheet(isPresented: $showCatalog) {
                 CatalogBrowseView { _, _ in
-                    viewModel.showCatalog = false
+                    showCatalog = false
                     Task { await viewModel.loadAll() }
                 }
             }
@@ -243,9 +247,6 @@ struct HomeView: View {
         }
         .task {
             await viewModel.loadAll()
-        }
-        .onChange(of: viewModel.showCatalog) { _, showing in
-            if !showing { Task { await viewModel.loadAll() } }
         }
         .refreshable {
             await viewModel.loadAll()
@@ -310,17 +311,12 @@ struct HomeView: View {
             }
         }
         .onAppear {
-            if viewModel.careTasks.isEmpty && !viewModel.plants.isEmpty {
-                Task { await viewModel.loadAll() }
-            }
-            if !hasShownNotificationPrompt && !viewModel.careTasks.isEmpty {
+            if !viewModel.careTasks.isEmpty {
                 Task {
-                    @Dependency(\.notificationScheduling) var scheduler
-                    if !(await scheduler.authorizationGranted()) {
+                    if await viewModel.checkNotificationPermissionIfNeeded() {
                         showNotificationAlert = true
                     }
                 }
-                hasShownNotificationPrompt = true
             }
         }
     }
