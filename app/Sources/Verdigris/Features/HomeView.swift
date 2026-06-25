@@ -86,32 +86,7 @@ final class HomeViewModel {
                 adherenceOffset: 0
             )
 
-            switch eventType {
-            case .watered:
-                if let last = updated.lastWatered {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastWatered = Date()
-            case .fertilized:
-                if let last = updated.lastFertilized {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastFertilized = Date()
-            case .pruned:
-                if let last = updated.lastPruned {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastPruned = Date()
-            case .repotted:
-                if let last = updated.lastRepotted {
-                    let daysLate = Calendar.current.dateComponents([.day], from: last, to: Date()).day ?? 0
-                    updated.adherenceOffset = max(0, updated.adherenceOffset + daysLate / 3 - 1)
-                }
-                updated.lastRepotted = Date()
-            }
+            updated.recordEvent(eventType, on: Date())
 
             try await scheduleRepository.save(updated)
 

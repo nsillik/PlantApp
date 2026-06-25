@@ -140,16 +140,7 @@ final class PlantDetailViewModel {
                 adherenceOffset: 0
             )
 
-            switch eventType {
-            case .watered:
-                updated.lastWatered = Date()
-            case .fertilized:
-                updated.lastFertilized = Date()
-            case .pruned:
-                updated.lastPruned = Date()
-            case .repotted:
-                updated.lastRepotted = Date()
-            }
+            updated.recordEvent(eventType, on: Date())
 
             try await scheduleRepository.save(updated)
         } catch {

@@ -306,6 +306,17 @@ struct CareSchedule: Identifiable, Sendable, Codable {
     var adherenceOffset: Int
 }
 
+extension CareSchedule {
+    mutating func recordEvent(_ type: CareEventType, on date: Date) {
+        let keyPath = type.scheduleKeyPath
+        if let last = self[keyPath: keyPath] {
+            let daysLate = Calendar.current.dateComponents([.day], from: last, to: date).day ?? 0
+            adherenceOffset = max(0, adherenceOffset + daysLate / 3 - 1)
+        }
+        self[keyPath: keyPath] = date
+    }
+}
+
 /// A resolved city from a user's search query.
 struct City: Equatable, Hashable, Sendable, Codable {
     var name: String
