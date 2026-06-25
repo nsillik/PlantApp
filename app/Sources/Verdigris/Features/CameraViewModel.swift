@@ -52,7 +52,7 @@ final class CameraViewModel {
         isProcessingFrame = false
     }
 
-    nonisolated func detectPlant(in pixelBuffer: CVPixelBuffer) async -> DetectionResult {
+    func detectPlant(in pixelBuffer: CVPixelBuffer) async -> DetectionResult {
         await identificationService.detectPlant(in: pixelBuffer)
     }
 

@@ -18,7 +18,7 @@ struct PlantRepositoryTests {
         )
 
         let mockRepository = MockInMemoryPlantRepository()
-        await mockRepository.addPlant(mockPlant)
+        try await mockRepository.save(mockPlant)
 
         await withDependencies {
             $0.plantRepository = mockRepository

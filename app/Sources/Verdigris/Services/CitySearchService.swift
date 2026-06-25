@@ -1,3 +1,5 @@
+/// `@preconcurrency import` needed because MKLocalSearchCompleter and its delegate
+/// are not fully Sendable-annotated in the SDK version pinned.
 @preconcurrency import MapKit
 
 struct CitySuggestion: Equatable, Hashable, Sendable {

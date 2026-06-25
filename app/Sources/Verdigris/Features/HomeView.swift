@@ -404,8 +404,11 @@ private struct TaskRow: View {
     }
 }
 
-struct PlantRowView: View {
-    let plant: Plant
+struct ThumbnailRow: View {
+    let title: String
+    let subtitle: String?
+    let systemImage: String
+    let imageColor: Color
 
     var body: some View {
         HStack(spacing: 12) {
@@ -413,20 +416,33 @@ struct PlantRowView: View {
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color(.systemGray5))
                     .frame(width: 44, height: 44)
-                Image(systemName: "leaf")
+                Image(systemName: systemImage)
                     .font(.title3)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(imageColor)
             }
             VStack(alignment: .leading, spacing: 2) {
-                Text(plant.name)
+                Text(title)
                     .font(.headline)
-                if let light = plant.placementLight?.label {
-                    Text(String(localized: "\(light) light"))
+                if let subtitle {
+                    Text(subtitle)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
         }
         .padding(.vertical, 4)
+    }
+}
+
+struct PlantRowView: View {
+    let plant: Plant
+
+    var body: some View {
+        ThumbnailRow(
+            title: plant.name,
+            subtitle: plant.placementLight.map { String(localized: "\($0.label) light") },
+            systemImage: "leaf",
+            imageColor: .green
+        )
     }
 }

@@ -1,3 +1,5 @@
+/// `@preconcurrency import` needed because NSManagedObjectContext is not @Sendable
+/// in the SDK version pinned, despite Apple's annotation progress.
 @preconcurrency import CoreData
 import Foundation
 

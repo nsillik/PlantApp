@@ -38,7 +38,7 @@ struct Phase2ViewModelTests {
         let scheduleRepo = MockInMemoryScheduleRepository()
         let catalog = MockInMemoryCatalogService(species: [testSpecies])
         let plantRepo = MockInMemoryPlantRepository()
-        await plantRepo.addPlant(testPlant)
+        try await plantRepo.save(testPlant)
 
         let viewModel = await withDependencies {
             $0.plantRepository = plantRepo
@@ -48,7 +48,7 @@ struct Phase2ViewModelTests {
             $0.userProfileRepository = MockNoopProfileRepository()
             $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
-            await MainActor.run { HomeViewModel() }
+            HomeViewModel()
         }
 
         await viewModel.loadAll()
@@ -70,7 +70,7 @@ struct Phase2ViewModelTests {
         let scheduleRepo = MockInMemoryScheduleRepository()
         let catalog = MockInMemoryCatalogService(species: [testSpecies])
         let plantRepo = MockInMemoryPlantRepository()
-        await plantRepo.addPlant(testPlant)
+        try await plantRepo.save(testPlant)
 
         let viewModel = await withDependencies {
             $0.plantRepository = plantRepo
@@ -80,7 +80,7 @@ struct Phase2ViewModelTests {
             $0.userProfileRepository = MockNoopProfileRepository()
             $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
-            await MainActor.run { HomeViewModel() }
+            HomeViewModel()
         }
 
         await viewModel.loadAll()
@@ -160,9 +160,3 @@ struct Phase2ViewModelTests {
     }
 }
 
-private struct MockNoopNotificationScheduler: NotificationScheduling {
-    func requestPermission() async -> Bool { false }
-    func authorizationGranted() async -> Bool { false }
-    func registerTasks(_ tasks: [CareTask]) async {}
-    func removeAll() {}
-}

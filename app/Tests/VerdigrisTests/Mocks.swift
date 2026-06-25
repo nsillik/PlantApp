@@ -11,6 +11,13 @@ struct MockNoopPlantRepository: PlantRepository {
     func delete(_ plant: Plant) async throws {}
 }
 
+struct MockNoopNotificationScheduler: NotificationScheduling {
+    func requestPermission() async -> Bool { false }
+    func authorizationGranted() async -> Bool { false }
+    func registerTasks(_ tasks: [CareTask]) async {}
+    func removeAll() {}
+}
+
 struct MockNoopCatalogService: CatalogService {
     func loadCatalog() async throws -> [PlantSpecies] { [] }
 }
@@ -36,10 +43,6 @@ struct MockNoopProfileRepository: UserProfileRepository {
 
 actor MockInMemoryPlantRepository: PlantRepository {
     private var storage: [Plant] = []
-
-    func addPlant(_ plant: Plant) {
-        storage.append(plant)
-    }
 
     func fetchAll() async throws -> [Plant] {
         storage
@@ -101,5 +104,39 @@ actor MockInMemoryCatalogService: CatalogService {
 
     func loadCatalog() async throws -> [PlantSpecies] {
         storage
+    }
+}
+
+actor MockCatalogService: CatalogService {
+    private let species: [PlantSpecies]
+
+    init(species: [PlantSpecies]) {
+        self.species = species
+    }
+
+    func loadCatalog() async throws -> [PlantSpecies] {
+        species
+    }
+}
+
+actor FailingCatalogService: CatalogService {
+    func loadCatalog() async throws -> [PlantSpecies] {
+        throw CatalogError.fileNotFound
+    }
+}
+
+actor MockAddPlantRepository: PlantRepository {
+    private var storage: [Plant] = []
+
+    func fetchAll() async throws -> [Plant] { storage }
+    func fetch(id: UUID) async throws -> Plant? { storage.first { $0.id == id } }
+
+    func save(_ plant: Plant) async throws {
+        storage.removeAll { $0.id == plant.id }
+        storage.append(plant)
+    }
+
+    func delete(_ plant: Plant) async throws {
+        storage.removeAll { $0.id == plant.id }
     }
 }

@@ -226,7 +226,8 @@ struct AlternativeLabel: Sendable, Equatable {
 }
 
 /// A detected plant region in a camera frame, in normalized (0–1) coordinates.
-struct DetectedBoundingBox: Sendable, Equatable {
+struct DetectedBoundingBox: Identifiable, Sendable, Equatable {
+    var id: String { "\(normalizedRect.origin.x),\(normalizedRect.origin.y),\(normalizedRect.width),\(normalizedRect.height)" }
     let normalizedRect: CGRect
     let confidence: Double
 }

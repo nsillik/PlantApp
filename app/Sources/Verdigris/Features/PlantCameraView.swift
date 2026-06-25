@@ -81,7 +81,7 @@ struct PlantCameraView: View {
 
     private var detectionOverlay: some View {
         GeometryReader { geometry in
-            ForEach(Array(viewModel.detectionResult.boundingBoxes.enumerated()), id: \.offset) { _, box in
+            ForEach(viewModel.detectionResult.boundingBoxes) { box in
                 let rect = normalizedToView(box.normalizedRect, in: geometry.size)
                 Rectangle()
                     .stroke(.green, lineWidth: 2)

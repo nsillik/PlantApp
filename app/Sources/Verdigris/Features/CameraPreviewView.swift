@@ -1,3 +1,5 @@
+/// `@preconcurrency import` needed because AVCaptureSession and
+/// AVCaptureVideoDataOutputSampleBufferDelegate are not fully Sendable-annotated.
 @preconcurrency import AVFoundation
 @preconcurrency import CoreVideo
 import SwiftUI

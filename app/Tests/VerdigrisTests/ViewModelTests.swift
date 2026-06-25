@@ -124,37 +124,3 @@ struct ViewModelTests {
         }
     }
 }
-
-private actor MockCatalogService: CatalogService {
-    private let species: [PlantSpecies]
-
-    init(species: [PlantSpecies]) {
-        self.species = species
-    }
-
-    func loadCatalog() async throws -> [PlantSpecies] {
-        species
-    }
-}
-
-private actor FailingCatalogService: CatalogService {
-    func loadCatalog() async throws -> [PlantSpecies] {
-        throw CatalogError.fileNotFound
-    }
-}
-
-private actor MockAddPlantRepository: PlantRepository {
-    private var storage: [Plant] = []
-
-    func fetchAll() async throws -> [Plant] { storage }
-    func fetch(id: UUID) async throws -> Plant? { storage.first { $0.id == id } }
-
-    func save(_ plant: Plant) async throws {
-        storage.removeAll { $0.id == plant.id }
-        storage.append(plant)
-    }
-
-    func delete(_ plant: Plant) async throws {
-        storage.removeAll { $0.id == plant.id }
-    }
-}
