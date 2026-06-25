@@ -9,7 +9,7 @@ import SwiftUI
 @MainActor
 @Observable
 final class LocationOnboardingViewModel {
-    let citySession = CitySearchSession()
+    var citySession = CitySearchSession()
 
     @ObservationIgnored
     @Dependency(\.climateService) private var climateService

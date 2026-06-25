@@ -75,4 +75,3 @@ final class CareScheduleEntity: NSManagedObject {
         NSFetchRequest<CareScheduleEntity>(entityName: "CareScheduleEntity")
     }
 }
-

@@ -8,7 +8,7 @@ import SwiftUI
 @MainActor
 @Observable
 final class SettingsViewModel {
-    let citySession = CitySearchSession()
+    var citySession = CitySearchSession()
     /// The currently persisted profile, loaded on appear.
     var currentProfile: UserProfile?
     /// Whether the user is editing the location field.

@@ -351,4 +351,3 @@ struct CareTask: Identifiable, Sendable, Equatable {
     /// Current completion status of this task instance.
     var status: Status
 }
-

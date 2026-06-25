@@ -1,5 +1,3 @@
-/// `@preconcurrency import` needed because NSManagedObjectContext is not @Sendable
-/// in the SDK version pinned, despite Apple's annotation progress.
 @preconcurrency import CoreData
 import Foundation
 import IssueReporting
@@ -69,8 +67,8 @@ final class PersistenceController: PersistenceService {
         }
     }
 
-    func withBackgroundContext<T: Sendable>(
-        _ perform: @escaping @Sendable (NSManagedObjectContext) throws -> T
+    func withBackgroundContext<T>(
+        _ perform: @escaping (NSManagedObjectContext) throws -> T
     ) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
             container.performBackgroundTask { context in
@@ -110,7 +108,7 @@ final class PersistenceController: PersistenceService {
     func upsert<T: NSManagedObject>(
         _ request: NSFetchRequest<T>,
         predicate: NSPredicate? = nil,
-        configure: @Sendable @escaping (T) -> Void
+        configure: @escaping (T) -> Void
     ) async throws {
         try await withBackgroundContext { context in
             request.predicate = predicate

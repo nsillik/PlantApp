@@ -26,6 +26,9 @@ struct MockNoopScheduleRepository: CareScheduleRepository {
     func fetch(plantID: UUID) async throws -> CareSchedule? { nil }
     func fetchAll() async throws -> [CareSchedule] { [] }
     func save(_ schedule: CareSchedule) async throws {}
+    func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws {}
+    func fetchCareEvents(plantID: UUID) async throws -> [CareEvent] { [] }
+    func fetchAllCareEvents(since date: Date) async throws -> [CareEvent] { [] }
 }
 
 struct MockNoopEventRepository: CareEventRepository {
@@ -64,6 +67,7 @@ actor MockInMemoryPlantRepository: PlantRepository {
 
 actor MockInMemoryScheduleRepository: CareScheduleRepository {
     private var storage: [CareSchedule] = []
+    private var eventStorage: [CareEvent] = []
 
     func fetch(plantID: UUID) async throws -> CareSchedule? {
         storage.first { $0.plantID == plantID }
@@ -76,6 +80,27 @@ actor MockInMemoryScheduleRepository: CareScheduleRepository {
     func save(_ schedule: CareSchedule) async throws {
         storage.removeAll { $0.plantID == schedule.plantID }
         storage.append(schedule)
+    }
+
+    func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws {
+        eventStorage.append(event)
+        if var schedule = storage.first(where: { $0.plantID == plantID }) {
+            storage.removeAll { $0.plantID == plantID }
+            schedule.recordEvent(event.eventType, on: event.timestamp)
+            storage.append(schedule)
+        } else {
+            var schedule = CareSchedule(id: UUID(), plantID: plantID, lastWatered: nil, lastFertilized: nil, lastPruned: nil, lastRepotted: nil, adherenceOffset: 0)
+            schedule.recordEvent(event.eventType, on: event.timestamp)
+            storage.append(schedule)
+        }
+    }
+
+    func fetchCareEvents(plantID: UUID) async throws -> [CareEvent] {
+        eventStorage.filter { $0.plantID == plantID }.sorted { $0.timestamp > $1.timestamp }
+    }
+
+    func fetchAllCareEvents(since date: Date) async throws -> [CareEvent] {
+        eventStorage.filter { $0.timestamp >= date }.sorted { $0.timestamp > $1.timestamp }
     }
 }
 

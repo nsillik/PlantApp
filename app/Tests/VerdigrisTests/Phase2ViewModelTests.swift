@@ -34,7 +34,6 @@ struct Phase2ViewModelTests {
 
     @Test("logCareEvent saves event and updates schedule")
     func logCareEventSavesEvent() async throws {
-        let eventRepo = MockInMemoryEventRepository()
         let scheduleRepo = MockInMemoryScheduleRepository()
         let catalog = MockInMemoryCatalogService(species: [testSpecies])
         let plantRepo = MockInMemoryPlantRepository()
@@ -44,7 +43,6 @@ struct Phase2ViewModelTests {
             $0.plantRepository = plantRepo
             $0.catalogService = catalog
             $0.careScheduleRepository = scheduleRepo
-            $0.careEventRepository = eventRepo
             $0.userProfileRepository = MockNoopProfileRepository()
             $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
@@ -55,7 +53,7 @@ struct Phase2ViewModelTests {
 
         await viewModel.logCareEvent(plantID: testPlantID, eventType: .watered)
 
-        let events = try await eventRepo.fetch(plantID: testPlantID)
+        let events = try await scheduleRepo.fetchCareEvents(plantID: testPlantID)
         #expect(events.count == 1)
         #expect(events.first?.eventType == .watered)
 
@@ -66,7 +64,6 @@ struct Phase2ViewModelTests {
 
     @Test("logCareEvent marks task as completed after recompute")
     func logCareEventMarksTaskCompleted() async throws {
-        let eventRepo = MockInMemoryEventRepository()
         let scheduleRepo = MockInMemoryScheduleRepository()
         let catalog = MockInMemoryCatalogService(species: [testSpecies])
         let plantRepo = MockInMemoryPlantRepository()
@@ -76,7 +73,6 @@ struct Phase2ViewModelTests {
             $0.plantRepository = plantRepo
             $0.catalogService = catalog
             $0.careScheduleRepository = scheduleRepo
-            $0.careEventRepository = eventRepo
             $0.userProfileRepository = MockNoopProfileRepository()
             $0.notificationScheduling = MockNoopNotificationScheduler()
         } operation: {
@@ -93,14 +89,12 @@ struct Phase2ViewModelTests {
 
     @Test("confirmCareEvent saves event and updates schedule")
     func confirmCareEventSavesEvent() async throws {
-        let eventRepo = MockInMemoryEventRepository()
         let scheduleRepo = MockInMemoryScheduleRepository()
 
         let viewModel = await withDependencies {
             $0.plantRepository = MockNoopPlantRepository()
             $0.catalogService = MockInMemoryCatalogService(species: [testSpecies])
             $0.careScheduleRepository = scheduleRepo
-            $0.careEventRepository = eventRepo
             $0.userProfileRepository = MockNoopProfileRepository()
         } operation: {
             await MainActor.run { PlantDetailViewModel(plant: testPlant) }
@@ -117,7 +111,7 @@ struct Phase2ViewModelTests {
         #expect(viewModel.careEvents.first?.eventType == .watered)
         #expect(viewModel.careEvents.first?.notes == "Good soak")
 
-        let events = try await eventRepo.fetch(plantID: testPlantID)
+        let events = try await scheduleRepo.fetchCareEvents(plantID: testPlantID)
         #expect(events.count == 1)
         #expect(events.first?.eventType == .watered)
 
@@ -159,4 +153,3 @@ struct Phase2ViewModelTests {
         }
     }
 }
-

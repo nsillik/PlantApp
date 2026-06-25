@@ -69,15 +69,24 @@ actor CoreDataPlantRepository: PlantRepository {
     }
 
     func fetch(id: UUID) async throws -> Plant? {
-        try await persistenceService.fetchFirst(PlantEntity.fetchRequest(), predicate: NSPredicate(format: "id == %@", id as CVarArg))?.toDomain()
+        try await persistenceService.fetchFirst(
+            PlantEntity.fetchRequest(),
+            predicate: NSPredicate(format: "id == %@", id as CVarArg)
+        )?.toDomain()
     }
 
     func save(_ plant: Plant) async throws {
-        try await persistenceService.upsert(PlantEntity.fetchRequest(), predicate: NSPredicate(format: "id == %@", plant.id as CVarArg)) { $0.fromDomain(plant) }
+        try await persistenceService.upsert(
+            PlantEntity.fetchRequest(),
+            predicate: NSPredicate(format: "id == %@", plant.id as CVarArg)
+        ) { $0.fromDomain(plant) }
     }
 
     func delete(_ plant: Plant) async throws {
-        try await persistenceService.deleteAll(PlantEntity.fetchRequest(), predicate: NSPredicate(format: "id == %@", plant.id as CVarArg))
+        try await persistenceService.deleteAll(
+            PlantEntity.fetchRequest(),
+            predicate: NSPredicate(format: "id == %@", plant.id as CVarArg)
+        )
     }
 }
 
@@ -106,7 +115,10 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
     }
 
     func fetch(plantID: UUID) async throws -> CareSchedule? {
-        try await persistenceService.fetchFirst(CareScheduleEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg))?.toDomain()
+        try await persistenceService.fetchFirst(
+            CareScheduleEntity.fetchRequest(),
+            predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg)
+        )?.toDomain()
     }
 
     func fetchAll() async throws -> [CareSchedule] {
@@ -114,7 +126,10 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
     }
 
     func save(_ schedule: CareSchedule) async throws {
-        try await persistenceService.upsert(CareScheduleEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", schedule.plantID as CVarArg)) { $0.fromDomain(schedule) }
+        try await persistenceService.upsert(
+            CareScheduleEntity.fetchRequest(),
+            predicate: NSPredicate(format: "plantID == %@", schedule.plantID as CVarArg)
+        ) { $0.fromDomain(schedule) }
     }
 
     func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws {
@@ -144,11 +159,19 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
     }
 
     func fetchCareEvents(plantID: UUID) async throws -> [CareEvent] {
-        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
+        try await persistenceService.fetchAll(
+            CareEventEntity.fetchRequest(),
+            predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg),
+            sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]
+        ).compactMap { $0.toDomain() }
     }
 
     func fetchAllCareEvents(since date: Date) async throws -> [CareEvent] {
-        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "timestamp >= %@", date as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
+        try await persistenceService.fetchAll(
+            CareEventEntity.fetchRequest(),
+            predicate: NSPredicate(format: "timestamp >= %@", date as CVarArg),
+            sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]
+        ).compactMap { $0.toDomain() }
     }
 }
 
@@ -160,11 +183,18 @@ actor CoreDataCareEventRepository: CareEventRepository {
     }
 
     func fetch(plantID: UUID) async throws -> [CareEvent] {
-        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
+        try await persistenceService.fetchAll(
+            CareEventEntity.fetchRequest(),
+            predicate: NSPredicate(format: "plantID == %@", plantID as CVarArg),
+            sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]
+        ).compactMap { $0.toDomain() }
     }
 
     func fetchAll() async throws -> [CareEvent] {
-        try await persistenceService.fetchAll(CareEventEntity.fetchRequest(), sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]).compactMap { $0.toDomain() }
+        try await persistenceService.fetchAll(
+            CareEventEntity.fetchRequest(),
+            sortDescriptors: [NSSortDescriptor(key: "timestamp", ascending: false)]
+        ).compactMap { $0.toDomain() }
     }
 
     func save(_ event: CareEvent) async throws {
@@ -274,51 +304,51 @@ private extension CareEventEntity {
     }
 }
 
-// MARK: - DependencyClient test stubs
+// MARK: - Test stubs for dependency injection
 
-@DependencyClient
 struct PlantRepositoryClient: PlantRepository {
-    func fetchAll() async throws -> [Plant] { [] }
-    func fetch(id _: UUID) async throws -> Plant? { nil }
+    func fetchAll() async throws -> [Plant] { reportIssue("Unimplemented"); return [] }
+    func fetch(id _: UUID) async throws -> Plant? { reportIssue("Unimplemented"); return nil }
+    func save(_: Plant) async throws { reportIssue("Unimplemented") }
+    func delete(_: Plant) async throws { reportIssue("Unimplemented") }
 }
 
-@DependencyClient
 struct UserProfileRepositoryClient: UserProfileRepository {
-    func fetch() async throws -> UserProfile? { nil }
+    func fetch() async throws -> UserProfile? { reportIssue("Unimplemented"); return nil }
+    func save(_: UserProfile) async throws { reportIssue("Unimplemented") }
 }
 
-@DependencyClient
 struct CareScheduleRepositoryClient: CareScheduleRepository {
-    func fetch(plantID _: UUID) async throws -> CareSchedule? { nil }
-    func fetchAll() async throws -> [CareSchedule] { [] }
-    func fetchCareEvents(plantID _: UUID) async throws -> [CareEvent] { [] }
-    func fetchAllCareEvents(since _: Date) async throws -> [CareEvent] { [] }
+    func fetch(plantID _: UUID) async throws -> CareSchedule? { reportIssue("Unimplemented"); return nil }
+    func fetchAll() async throws -> [CareSchedule] { reportIssue("Unimplemented"); return [] }
+    func save(_: CareSchedule) async throws { reportIssue("Unimplemented") }
+    func recordCareEvent(_: CareEvent, updatingScheduleFor _: UUID) async throws { reportIssue("Unimplemented") }
+    func fetchCareEvents(plantID _: UUID) async throws -> [CareEvent] { reportIssue("Unimplemented"); return [] }
+    func fetchAllCareEvents(since _: Date) async throws -> [CareEvent] { reportIssue("Unimplemented"); return [] }
 }
 
-@DependencyClient
 struct CareEventRepositoryClient: CareEventRepository {
-    func fetch(plantID _: UUID) async throws -> [CareEvent] { [] }
-    func fetchAll() async throws -> [CareEvent] { [] }
+    func fetch(plantID _: UUID) async throws -> [CareEvent] { reportIssue("Unimplemented"); return [] }
+    func fetchAll() async throws -> [CareEvent] { reportIssue("Unimplemented"); return [] }
+    func save(_: CareEvent) async throws { reportIssue("Unimplemented") }
 }
 
-@DependencyClient
 struct CatalogServiceClient: CatalogService {
-    func loadCatalog() async throws -> [PlantSpecies] { [] }
+    func loadCatalog() async throws -> [PlantSpecies] { reportIssue("Unimplemented"); return [] }
 }
 
-@DependencyClient
 struct CitySearchServiceClient: CitySearchService {
-    func search(query _: String) async throws -> [CitySuggestion] { [] }
-    func resolve(_: CitySuggestion) async throws -> City { throw CitySearchError.resolutionFailed }
+    func search(query _: String) async throws -> [CitySuggestion] { reportIssue("Unimplemented"); return [] }
+    func resolve(_: CitySuggestion) async throws -> City { reportIssue("Unimplemented"); throw CitySearchError.resolutionFailed }
 }
 
-@DependencyClient
 struct ClimateServiceClient: ClimateService {
-    func climateClassification(for _: City) -> ClimateClassification { .temperate }
+    func climateClassification(for _: City) -> ClimateClassification { reportIssue("Unimplemented"); return .temperate }
 }
 
-@DependencyClient
 struct NotificationSchedulerClient: NotificationScheduling {
-    func requestPermission() async -> Bool { false }
-    func authorizationGranted() async -> Bool { false }
+    func requestPermission() async -> Bool { reportIssue("Unimplemented"); return false }
+    func authorizationGranted() async -> Bool { reportIssue("Unimplemented"); return false }
+    func registerTasks(_: [CareTask]) async { reportIssue("Unimplemented") }
+    func removeAll() { reportIssue("Unimplemented") }
 }

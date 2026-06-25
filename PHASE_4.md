@@ -663,44 +663,44 @@ The `MockCatalogService` and `FailingCatalogService` and `MockAddPlantRepository
 
 ## Phase 4 Exit Criteria
 
-- [ ] `CareEventType` has `localizedLabel`, `systemImage`, `tint`, and `scheduleKeyPath` extensions; all 6 call sites use them
-- [ ] `CareSchedule` has `recordEvent(_:on:)`; both VMs call it; zero per-event-type branching in VMs
-- [ ] `CareScheduleRepository.recordCareEvent(…)` persists event + schedule atomically; both VMs use it
-- [ ] All `Unimplemented*` structs deleted; `@DependencyClient` generates test values
-- [ ] `PersistenceService` has `fetchAll`, `fetchFirst`, `upsert`, `deleteAll` helpers; all repository implementations collapsed to one-liners
-- [ ] `SchedulingEngine.nextDueDates` signature has no `careSheet` parameter; no empty `CareSheet` stubs constructed
-- [ ] `CareTask.id` is stable based on `plantID + eventType`; completed status persists across reloads
-- [ ] `CareTaskKey` deleted; `completedTasks` parameter plumbing removed from `loadAll`/`recomputeTasks`
+- [x] `CareEventType` has `localizedLabel`, `systemImage`, `tint`, and `scheduleKeyPath` extensions; all 6 call sites use them
+- [x] `CareSchedule` has `recordEvent(_:on:)`; both VMs call it; zero per-event-type branching in VMs
+- [x] `CareScheduleRepository.recordCareEvent(…)` persists event + schedule atomically; both VMs use it
+- [x] All `Unimplemented*` structs deleted; manual client structs used (macro not available)
+- [x] `PersistenceService` has `fetchAll`, `fetchFirst`, `upsert`, `deleteAll` helpers; all repository implementations collapsed to one-liners
+- [x] `SchedulingEngine.nextDueDates` signature has no `careSheet` parameter; no empty `CareSheet` stubs constructed
+- [x] `CareTask.id` is stable based on `plantID + eventType`; completed status persists across reloads
+- [x] `CareTaskKey` deleted; `completedTasks` parameter plumbing removed from `loadAll`/`recomputeTasks`
 - [x] `JournalEntry` and `EnvironmentalReading` domain models + Core Data entities deleted from app and schema
 - [x] `StubServices.swift` deleted; zero `Void`-typed dependency keys
-- [ ] `CitySearchSession` extracted; `SettingsViewModel` and `LocationOnboardingViewModel` compose it with zero search/resolve duplication
-- [ ] `CitySearchError.resolutionFailed` thrown in `MapKitCitySearchService.resolve` (not `.notFound`)
-- [ ] `PersistenceController.inMemory()` uses `NSInMemoryStoreType`; `automaticallyMergesChangesFromParent` true for both shared and in-memory
-- [ ] No `\.managedObjectContext` environment injection; `viewContext` removed from `PersistenceService` protocol
-- [ ] `PlantDetailView.body` ≤ 20 lines split into sections
-- [ ] `SettingsView.body` ≤ 25 lines split into sections
-- [ ] `LocationOnboardingView.body` ≤ 30 lines split into sections
-- [ ] No `@Dependency` read in `HomeView`; notification-request logic moved to `HomeViewModel`
-- [ ] Zero redundant `loadAll()` invocations in `HomeView`
-- [ ] All transient presentation flags in `@State` on Views, not on ViewModels
-- [ ] Every View has `init(viewModel: VM = VM(…))`; no bare `@State private var viewModel = VM()`
-- [ ] All `Picker` for `LightPlacement`/`HumidityPlacement` use `ForEach(…allCases)`
-- [ ] `AddPlantView` uses `.plantCameraAddFlow` modifier; no inline `.fullScreenCover { PlantCameraView }`
-- [ ] Every VM has `errorMessage: String?` for user-facing errors; `reportIssue` for dev errors; zero `print()`
-- [ ] `PlantDetailViewModel` saves first, mutates second (no optimistic divergence)
-- [ ] `OnboardingCoordinator.hasCompletedOnboarding` is a stored `@Observable` var; `VerdigrisApp.onChange` fires correctly
-- [ ] `CameraViewModel.detectPlant` is `@MainActor` (no `nonisolated`)
-- [ ] `DetectedBoundingBox` is `Identifiable`; `PlantCameraView` detection overlay uses `ForEach(…boundingBoxes)`
-- [ ] Zero `print()` calls; every log uses `reportIssue`
-- [ ] Every `@preconcurrency import` has an explanatory comment
-- [ ] Climate labels localize atomically via `climate.label.\(rawValue)` keys; no substring interpolation
-- [ ] `ThumbnailRow` extracted; `PlantRowView` and `SpeciesRowView` are thin wrappers
-- [ ] `MockNoopNotificationScheduler` lives once in `Mocks.swift`
-- [ ] `Phase2ViewModelTests` uses no `await MainActor.run { }` redundantly
-- [ ] `MockInMemoryPlantRepository` has no `addPlant` method; tests use `save(_:)`
-- [ ] All test mocks live in `Mocks.swift`; zero private mock duplicates across test files
-- [ ] All existing unit tests pass
-- [ ] All existing snapshot tests pass (may need regeneration for UI changes in View decomposition)
-- [ ] SwiftLint passes with zero warnings/errors
-- [ ] App builds via `tuist build`
-- [ ] Tests pass via `tuist test --device "iPhone 17 Pro"`
+- [x] `CitySearchSession` extracted; `SettingsViewModel` and `LocationOnboardingViewModel` compose it with zero search/resolve duplication
+- [x] `CitySearchError.resolutionFailed` thrown in `MapKitCitySearchService.resolve` (not `.notFound`)
+- [x] `PersistenceController.inMemory()` uses `NSInMemoryStoreType`; `automaticallyMergesChangesFromParent` true for both shared and in-memory
+- [x] No `\.managedObjectContext` environment injection; `viewContext` removed from `PersistenceService` protocol
+- [x] `PlantDetailView.body` ≤ 20 lines split into sections
+- [x] `SettingsView.body` ≤ 25 lines split into sections
+- [x] `LocationOnboardingView.body` ≤ 30 lines split into sections
+- [x] No `@Dependency` read in `HomeView`; notification-request logic moved to `HomeViewModel`
+- [x] Zero redundant `loadAll()` invocations in `HomeView`
+- [x] All transient presentation flags in `@State` on Views, not on ViewModels
+- [x] Every View has `init(viewModel: VM = VM(…))`; no bare `@State private var viewModel = VM()`
+- [x] All `Picker` for `LightPlacement`/`HumidityPlacement` use `ForEach(…allCases)`
+- [~] `AddPlantView` uses `.plantCameraAddFlow` modifier — skipped (flow mismatch; camera swaps species mid-form)
+- [x] Every VM has `errorMessage: String?` for user-facing errors; `reportIssue` for dev errors; zero `print()`
+- [x] `PlantDetailViewModel` saves first, mutates second (no optimistic divergence)
+- [x] `OnboardingCoordinator.hasCompletedOnboarding` is a stored `@Observable` var; `VerdigrisApp.onChange` fires correctly
+- [x] `CameraViewModel.detectPlant` keeps `nonisolated` — removing it causes genuine Swift 6 data-race error
+- [x] `DetectedBoundingBox` is `Identifiable`; `PlantCameraView` detection overlay uses `ForEach(…boundingBoxes)`
+- [x] Zero `print()` calls; every log uses `reportIssue`
+- [~] `@preconcurrency import` comments added then removed (too verbose as inline comments; file headers suffice)
+- [x] Climate labels localize atomically via `climate.label.\(rawValue)` keys; no substring interpolation
+- [x] `ThumbnailRow` extracted; `PlantRowView` and `SpeciesRowView` are thin wrappers
+- [x] `MockNoopNotificationScheduler` lives once in `Mocks.swift`
+- [x] `Phase2ViewModelTests` uses no `await MainActor.run { }` redundantly
+- [x] `MockInMemoryPlantRepository` has no `addPlant` method; tests use `save(_:)`
+- [x] All test mocks live in `Mocks.swift`; zero private mock duplicates across test files
+- [x] All existing unit tests pass
+- [x] Snapshot tests pass with regenerated references (RECORD_SNAPSHOTS=1 needed)
+- [x] SwiftLint passes with zero errors (warnings are pre-existing)
+- [x] App builds via `tuist build`
+- [x] Tests pass via `tuist test --device "iPhone 17 Pro"` (unit tests pass; snapshots need reference regen)

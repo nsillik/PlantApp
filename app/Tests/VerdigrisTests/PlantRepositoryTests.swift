@@ -7,7 +7,7 @@ import Testing
 @Suite("PlantRepository Tests")
 struct PlantRepositoryTests {
     @Test("Mock repository can be injected and used")
-    func mockRepositoryInjection() async {
+    func mockRepositoryInjection() async throws {
         let mockPlant = Plant(
             id: UUID(),
             name: "Test Monstera",
