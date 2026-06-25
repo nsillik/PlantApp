@@ -26,7 +26,6 @@ struct SchedulingEngineTests {
 
         let tasks = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .spring, plantName: "Test", now: now
         )
 
@@ -50,7 +49,6 @@ struct SchedulingEngineTests {
 
         let tasks = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .spring, plantName: "Test", now: now
         )
 
@@ -71,7 +69,6 @@ struct SchedulingEngineTests {
 
         let tasks = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .spring, plantName: "Test", now: now
         )
 
@@ -92,7 +89,6 @@ struct SchedulingEngineTests {
 
         let tasks = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .spring, plantName: "Test", now: now
         )
 
@@ -113,12 +109,10 @@ struct SchedulingEngineTests {
 
         let first = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .summer, plantName: "Test", now: now
         )
         let second = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .summer, plantName: "Test", now: now
         )
 
@@ -144,12 +138,10 @@ struct SchedulingEngineTests {
 
         let winterTasks = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .winter, plantName: "Test", now: now
         )
         let summerTasks = engine.nextDueDates(
             schedule: schedule, species: testSpecies,
-            careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
             season: .summer, plantName: "Test", now: now
         )
 
