@@ -347,15 +347,3 @@ struct CareTask: Identifiable, Sendable, Equatable {
     var status: Status
 }
 
-/// An environmental data point, sourced from device sensors or weather APIs.
-struct EnvironmentalReading: Identifiable, Sendable, Codable {
-    let id: UUID
-    /// When the reading was captured.
-    var date: Date
-    /// Temperature in degrees Celsius.
-    var temperature: Double
-    /// Relative humidity as a percentage (0–100).
-    var humidity: Double
-    /// Hours of daylight for the given date and location.
-    var daylightHours: Double
-}

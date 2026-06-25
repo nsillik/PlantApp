@@ -45,21 +45,5 @@
         <attribute name="lastRepotted" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <attribute name="adherenceOffset" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
     </entity>
-    <entity name="JournalEntryEntity" representedClassName="JournalEntryEntity" syncable="YES">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="plantID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="healthScore" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="leafCount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="height" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="notes" optional="YES" attributeType="String"/>
-        <attribute name="photoData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
-    </entity>
-    <entity name="EnvironmentalReadingEntity" representedClassName="EnvironmentalReadingEntity" syncable="YES">
-        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
-        <attribute name="temperature" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="humidity" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="daylightHours" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
-    </entity>
+
 </model>
