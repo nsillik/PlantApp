@@ -10,10 +10,8 @@ struct VerdigrisApp: App {
         WindowGroup {
             if coordinator.hasCompletedOnboarding {
                 HomeView(onboardingCoordinator: coordinator)
-                    .environment(\.managedObjectContext, persistenceService.viewContext)
             } else {
                 OnboardingRootView(coordinator: coordinator)
-                    .environment(\.managedObjectContext, persistenceService.viewContext)
             }
         }
         .onChange(of: coordinator.hasCompletedOnboarding) { _, _ in

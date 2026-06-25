@@ -6,10 +6,6 @@ final class PersistenceController: PersistenceService {
 
     let container: NSPersistentCloudKitContainer
 
-    var viewContext: NSManagedObjectContext {
-        container.viewContext
-    }
-
     private init() {
         let modelURL = Bundle.main.url(forResource: "Verdigris", withExtension: "momd")!
         let model = NSManagedObjectModel(contentsOf: modelURL)!
