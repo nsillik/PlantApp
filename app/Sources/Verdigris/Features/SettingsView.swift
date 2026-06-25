@@ -51,8 +51,13 @@ final class SettingsViewModel {
 }
 
 struct SettingsView: View {
+    @State private var viewModel: SettingsViewModel
     let onResetOnboarding: () -> Void
-    @State private var viewModel = SettingsViewModel()
+
+    init(viewModel: SettingsViewModel = SettingsViewModel(), onResetOnboarding: @escaping () -> Void) {
+        self._viewModel = State(initialValue: viewModel)
+        self.onResetOnboarding = onResetOnboarding
+    }
 
     var body: some View {
         NavigationStack {

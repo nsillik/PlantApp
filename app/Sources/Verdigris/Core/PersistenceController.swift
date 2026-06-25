@@ -1,5 +1,6 @@
 @preconcurrency import CoreData
 import Foundation
+import IssueReporting
 
 final class PersistenceController: PersistenceService {
     static let shared = PersistenceController()
@@ -22,7 +23,7 @@ final class PersistenceController: PersistenceService {
 
         container.loadPersistentStores { _, error in
             if let error {
-                print("Warning: Failed to load persistent store: \(error)")
+                reportIssue("Warning: Failed to load persistent store: \(error)")
             }
         }
 
@@ -49,7 +50,7 @@ final class PersistenceController: PersistenceService {
 
         container.loadPersistentStores { _, error in
             if let error {
-                print("Warning: Failed to load in-memory persistent store: \(error)")
+                reportIssue("Warning: Failed to load in-memory persistent store: \(error)")
             }
         }
 
@@ -62,7 +63,7 @@ final class PersistenceController: PersistenceService {
         do {
             try context.save()
         } catch {
-            print("Failed to save context: \(error)")
+            reportIssue("Failed to save context: \(error)")
         }
     }
 

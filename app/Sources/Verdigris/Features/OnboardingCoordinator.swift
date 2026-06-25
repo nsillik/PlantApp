@@ -18,9 +18,7 @@ final class OnboardingCoordinator {
 
     private let onboardingKey = "hasCompletedOnboarding"
 
-    var hasCompletedOnboarding: Bool {
-        UserDefaults.standard.bool(forKey: onboardingKey)
-    }
+    var hasCompletedOnboarding = false
 
     func completeLocation(_ profile: UserProfile) {
         userProfile = profile
@@ -36,10 +34,12 @@ final class OnboardingCoordinator {
 
     func completeOnboarding() {
         currentStep = .complete
+        hasCompletedOnboarding = true
         UserDefaults.standard.set(true, forKey: onboardingKey)
     }
 
     func resetOnboarding() {
+        hasCompletedOnboarding = false
         UserDefaults.standard.set(false, forKey: onboardingKey)
         userProfile = nil
         currentStep = .location

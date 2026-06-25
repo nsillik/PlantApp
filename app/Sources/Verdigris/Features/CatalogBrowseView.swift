@@ -35,12 +35,13 @@ final class CatalogBrowseViewModel {
 }
 
 struct CatalogBrowseView: View {
-    @State private var viewModel = CatalogBrowseViewModel()
+    @State private var viewModel: CatalogBrowseViewModel
     @State private var addSpecies: PlantSpecies?
     @State private var showCamera = false
     let onAdd: ((PlantSpecies, Plant) -> Void)?
 
-    init(onAdd: ((PlantSpecies, Plant) -> Void)? = nil) {
+    init(viewModel: CatalogBrowseViewModel = CatalogBrowseViewModel(), onAdd: ((PlantSpecies, Plant) -> Void)? = nil) {
+        self._viewModel = State(initialValue: viewModel)
         self.onAdd = onAdd
     }
 

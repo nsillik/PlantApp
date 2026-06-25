@@ -58,7 +58,12 @@ struct AddPlantView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(species: PlantSpecies, onSaved: @escaping (Plant) -> Void) {
-        _viewModel = State(initialValue: AddPlantViewModel(species: species))
+        self._viewModel = State(initialValue: AddPlantViewModel(species: species))
+        self.onSaved = onSaved
+    }
+
+    init(viewModel: AddPlantViewModel, onSaved: @escaping (Plant) -> Void) {
+        self._viewModel = State(initialValue: viewModel)
         self.onSaved = onSaved
     }
 
@@ -71,18 +76,18 @@ struct AddPlantView: View {
 
                 Section(String(localized: "Light Placement")) {
                     Picker(String(localized: "Light"), selection: $viewModel.selectedLight) {
-                        Text(LightPlacement.indirect.label).tag(LightPlacement.indirect)
-                        Text(LightPlacement.directSouth.label).tag(LightPlacement.directSouth)
-                        Text(LightPlacement.directEastWest.label).tag(LightPlacement.directEastWest)
+                        ForEach(LightPlacement.allCases, id: \.self) { placement in
+                            Text(placement.label).tag(placement)
+                        }
                     }
                     .pickerStyle(.menu)
                 }
 
                 Section(String(localized: "Humidity")) {
                     Picker(String(localized: "Humidity"), selection: $viewModel.selectedHumidity) {
-                        Text(HumidityPlacement.dry.label).tag(HumidityPlacement.dry)
-                        Text(HumidityPlacement.normal.label).tag(HumidityPlacement.normal)
-                        Text(HumidityPlacement.wet.label).tag(HumidityPlacement.wet)
+                        ForEach(HumidityPlacement.allCases, id: \.self) { placement in
+                            Text(placement.label).tag(placement)
+                        }
                     }
                     .pickerStyle(.menu)
                 }

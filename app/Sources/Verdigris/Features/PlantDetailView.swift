@@ -16,6 +16,7 @@ final class PlantDetailViewModel {
     var careSheet: CareSheet?
     var careEvents: [CareEvent] = []
     var isLoadingEvents = false
+    var errorMessage: String?
     var pendingEvent: PendingCareEvent?
     var pendingEventNotes: String = ""
     var pendingEventPhotoData: Data?
@@ -57,45 +58,42 @@ final class PlantDetailViewModel {
     }
 
     func updatePlacement(light: LightPlacement) {
-        plant.placementLight = light
-        regenerateCareSheet()
         Task {
+            var updated = plant
+            updated.placementLight = light
             do {
-                try await repository.save(plant)
+                try await repository.save(updated)
+                plant = updated
+                regenerateCareSheet()
             } catch {
-                reportIssue("""
-                  Failed to save light placement for \(plant.id): \
-                  \(error.localizedDescription)
-                  """)
+                errorMessage = "Failed to save light placement."
             }
         }
     }
 
     func updatePlacement(humidity: HumidityPlacement) {
-        plant.placementHumidity = humidity
-        regenerateCareSheet()
         Task {
+            var updated = plant
+            updated.placementHumidity = humidity
             do {
-                try await repository.save(plant)
+                try await repository.save(updated)
+                plant = updated
+                regenerateCareSheet()
             } catch {
-                reportIssue("""
-                  Failed to save humidity placement for \(plant.id): \
-                  \(error.localizedDescription)
-                  """)
+                errorMessage = "Failed to save humidity placement."
             }
         }
     }
 
     func updateName(_ name: String) {
-        plant.name = name
         Task {
+            var updated = plant
+            updated.name = name
             do {
-                try await repository.save(plant)
+                try await repository.save(updated)
+                plant = updated
             } catch {
-                reportIssue("""
-                  Failed to save plant name for \(plant.id): \
-                  \(error.localizedDescription)
-                  """)
+                errorMessage = "Failed to save plant name."
             }
         }
     }
@@ -107,26 +105,25 @@ final class PlantDetailViewModel {
     }
 
     func confirmCareEvent() async {
-        guard let pendingEvent else { return }
+        guard let currentPending = pendingEvent else { return }
 
         let event = CareEvent(
-            id: pendingEvent.id,
+            id: currentPending.id,
             plantID: plant.id,
-            eventType: pendingEvent.eventType,
+            eventType: currentPending.eventType,
             timestamp: Date(),
             photoData: pendingEventPhotoData,
             notes: pendingEventNotes.isEmpty ? nil : pendingEventNotes
         )
 
-        self.pendingEvent = nil
-        pendingEventPhotoData = nil
-        pendingEventNotes = ""
-
         do {
             try await scheduleRepository.recordCareEvent(event, updatingScheduleFor: plant.id)
             careEvents.insert(event, at: 0)
+            self.pendingEvent = nil
+            pendingEventPhotoData = nil
+            pendingEventNotes = ""
         } catch {
-            reportIssue("Failed to log care event: \(error)")
+            errorMessage = "Failed to log care event."
         }
     }
 
@@ -182,6 +179,10 @@ struct PlantDetailView: View {
 
     init(plant: Plant) {
         self._viewModel = State(initialValue: PlantDetailViewModel(plant: plant))
+    }
+
+    init(viewModel: PlantDetailViewModel) {
+        self._viewModel = State(initialValue: viewModel)
     }
 
     var body: some View {

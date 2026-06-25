@@ -29,8 +29,13 @@ final class LocationOnboardingViewModel {
 }
 
 struct LocationOnboardingView: View {
-    @State private var viewModel = LocationOnboardingViewModel()
+    @State private var viewModel: LocationOnboardingViewModel
     let onComplete: (UserProfile) -> Void
+
+    init(viewModel: LocationOnboardingViewModel = LocationOnboardingViewModel(), onComplete: @escaping (UserProfile) -> Void) {
+        self._viewModel = State(initialValue: viewModel)
+        self.onComplete = onComplete
+    }
 
     var body: some View {
         VStack(spacing: 20) {
