@@ -22,8 +22,6 @@ final class HomeViewModel {
     @ObservationIgnored
     @Dependency(\.careScheduleRepository) private var scheduleRepository
     @ObservationIgnored
-    @Dependency(\.careEventRepository) private var eventRepository
-    @ObservationIgnored
     @Dependency(\.notificationScheduling) private var scheduler
 
     private let engine = SchedulingEngine()
@@ -73,23 +71,7 @@ final class HomeViewModel {
         )
 
         do {
-            try await eventRepository.save(event)
-
-            let schedule = try await scheduleRepository.fetch(plantID: plantID)
-            var updated = schedule ?? CareSchedule(
-                id: UUID(),
-                plantID: plantID,
-                lastWatered: nil,
-                lastFertilized: nil,
-                lastPruned: nil,
-                lastRepotted: nil,
-                adherenceOffset: 0
-            )
-
-            updated.recordEvent(eventType, on: Date())
-
-            try await scheduleRepository.save(updated)
-
+            try await scheduleRepository.recordCareEvent(event, updatingScheduleFor: plantID)
             let completedKey = CareTaskKey(plantID: plantID, eventType: eventType)
             await loadAll(completedTasks: [completedKey])
             await reRegisterNotifications()

@@ -33,6 +33,10 @@ protocol CareScheduleRepository: Sendable {
     func fetchAll() async throws -> [CareSchedule]
     /// Creates or updates a schedule.
     func save(_ schedule: CareSchedule) async throws
+    /// Persists a care event and atomically updates the schedule in a single transaction.
+    func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws
+    /// Returns all care events for a given plant, sorted by timestamp descending.
+    func fetchCareEvents(plantID: UUID) async throws -> [CareEvent]
 }
 
 /// Persistence operations for care events.
@@ -158,6 +162,42 @@ actor CoreDataCareScheduleRepository: CareScheduleRepository {
             let entity = entities.first ?? CareScheduleEntity(context: context)
             entity.fromDomain(schedule)
             try context.save()
+        }
+    }
+
+    func recordCareEvent(_ event: CareEvent, updatingScheduleFor plantID: UUID) async throws {
+        try await persistenceService.withBackgroundContext { context in
+            let eventEntity = CareEventEntity(context: context)
+            eventEntity.fromDomain(event)
+
+            let scheduleRequest = CareScheduleEntity.fetchRequest()
+            scheduleRequest.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
+            let scheduleEntities = try context.fetch(scheduleRequest)
+            let scheduleEntity = scheduleEntities.first ?? CareScheduleEntity(context: context)
+
+            var schedule = scheduleEntity.toDomain() ?? CareSchedule(
+                id: scheduleEntity.id ?? UUID(),
+                plantID: plantID,
+                lastWatered: nil,
+                lastFertilized: nil,
+                lastPruned: nil,
+                lastRepotted: nil,
+                adherenceOffset: 0
+            )
+            schedule.recordEvent(event.eventType, on: event.timestamp)
+            scheduleEntity.fromDomain(schedule)
+
+            try context.save()
+        }
+    }
+
+    func fetchCareEvents(plantID: UUID) async throws -> [CareEvent] {
+        try await persistenceService.withBackgroundContext { context in
+            let request = CareEventEntity.fetchRequest()
+            request.predicate = NSPredicate(format: "plantID == %@", plantID as CVarArg)
+            request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+            let entities = try context.fetch(request)
+            return entities.compactMap { $0.toDomain() }
         }
     }
 }

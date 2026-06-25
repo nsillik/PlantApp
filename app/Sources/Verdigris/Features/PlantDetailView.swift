@@ -27,8 +27,6 @@ final class PlantDetailViewModel {
     @ObservationIgnored
     @Dependency(\.catalogService) private var catalogService
     @ObservationIgnored
-    @Dependency(\.careEventRepository) private var eventRepository
-    @ObservationIgnored
     @Dependency(\.careScheduleRepository) private var scheduleRepository
 
     var editableName: String {
@@ -44,7 +42,7 @@ final class PlantDetailViewModel {
         do {
             async let allSpecies = catalogService.loadCatalog()
             async let profile = profileRepository.fetch()
-            async let events = eventRepository.fetch(plantID: plant.id)
+            async let events = scheduleRepository.fetchCareEvents(plantID: plant.id)
 
             catalogSpecies = try await allSpecies.first { $0.id == plant.speciesID }
             userProfile = try await profile
@@ -120,29 +118,13 @@ final class PlantDetailViewModel {
             notes: pendingEventNotes.isEmpty ? nil : pendingEventNotes
         )
 
-        let eventType = pendingEvent.eventType
         self.pendingEvent = nil
         pendingEventPhotoData = nil
         pendingEventNotes = ""
 
         do {
-            try await eventRepository.save(event)
+            try await scheduleRepository.recordCareEvent(event, updatingScheduleFor: plant.id)
             careEvents.insert(event, at: 0)
-
-            let schedule = try await scheduleRepository.fetch(plantID: plant.id)
-            var updated = schedule ?? CareSchedule(
-                id: UUID(),
-                plantID: plant.id,
-                lastWatered: nil,
-                lastFertilized: nil,
-                lastPruned: nil,
-                lastRepotted: nil,
-                adherenceOffset: 0
-            )
-
-            updated.recordEvent(eventType, on: Date())
-
-            try await scheduleRepository.save(updated)
         } catch {
             reportIssue("Failed to log care event: \(error)")
         }
