@@ -1,4 +1,5 @@
 import Foundation
+import struct SwiftUI.Color
 
 /// The user's profile, used to derive climate-aware care recommendations.
 struct UserProfile: Identifiable, Sendable, Codable {
@@ -247,11 +248,49 @@ struct CareEvent: Identifiable, Sendable, Codable {
 }
 
 /// Kinds of care actions that can be logged.
-enum CareEventType: String, Sendable, Codable {
+enum CareEventType: String, Sendable, Codable, CaseIterable {
     case watered
     case fertilized
     case pruned
     case repotted
+}
+
+extension CareEventType {
+    var localizedLabel: String {
+        switch self {
+        case .watered: String(localized: "Watering")
+        case .fertilized: String(localized: "Fertilizing")
+        case .pruned: String(localized: "Pruning")
+        case .repotted: String(localized: "Repotting")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .watered: "drop.fill"
+        case .fertilized: "leaf.arrow.circlepath"
+        case .pruned: "scissors"
+        case .repotted: "tray.full"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .watered: .blue
+        case .fertilized: .green
+        case .pruned: .orange
+        case .repotted: .brown
+        }
+    }
+
+    var scheduleKeyPath: WritableKeyPath<CareSchedule, Date?> {
+        switch self {
+        case .watered: \.lastWatered
+        case .fertilized: \.lastFertilized
+        case .pruned: \.lastPruned
+        case .repotted: \.lastRepotted
+        }
+    }
 }
 
 /// Tracks the most recent care dates for a plant to drive reminders.

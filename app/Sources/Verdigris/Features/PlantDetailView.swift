@@ -241,17 +241,14 @@ struct PlantDetailView: View {
                     .fontWeight(.semibold)
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                    CareActionButton(title: String(localized: "Watered"), icon: "drop.fill", color: .blue) {
-                        viewModel.beginLogCareEvent(.watered)
-                    }
-                    CareActionButton(title: String(localized: "Fertilized"), icon: "leaf.arrow.circlepath", color: .green) {
-                        viewModel.beginLogCareEvent(.fertilized)
-                    }
-                    CareActionButton(title: String(localized: "Pruned"), icon: "scissors", color: .orange) {
-                        viewModel.beginLogCareEvent(.pruned)
-                    }
-                    CareActionButton(title: String(localized: "Repotted"), icon: "tray.full", color: .brown) {
-                        viewModel.beginLogCareEvent(.repotted)
+                    ForEach(CareEventType.allCases, id: \.self) { eventType in
+                        CareActionButton(
+                            title: eventType.localizedLabel,
+                            icon: eventType.systemImage,
+                            color: eventType.tint
+                        ) {
+                            viewModel.beginLogCareEvent(eventType)
+                        }
                     }
                 }
 

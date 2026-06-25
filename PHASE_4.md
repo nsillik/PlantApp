@@ -671,8 +671,8 @@ The `MockCatalogService` and `FailingCatalogService` and `MockAddPlantRepository
 - [ ] `SchedulingEngine.nextDueDates` signature has no `careSheet` parameter; no empty `CareSheet` stubs constructed
 - [ ] `CareTask.id` is stable based on `plantID + eventType`; completed status persists across reloads
 - [ ] `CareTaskKey` deleted; `completedTasks` parameter plumbing removed from `loadAll`/`recomputeTasks`
-- [ ] `JournalEntry` and `EnvironmentalReading` domain models + Core Data entities deleted from app and schema
-- [ ] `StubServices.swift` deleted; zero `Void`-typed dependency keys
+- [x] `JournalEntry` and `EnvironmentalReading` domain models + Core Data entities deleted from app and schema
+- [x] `StubServices.swift` deleted; zero `Void`-typed dependency keys
 - [ ] `CitySearchSession` extracted; `SettingsViewModel` and `LocationOnboardingViewModel` compose it with zero search/resolve duplication
 - [ ] `CitySearchError.resolutionFailed` thrown in `MapKitCitySearchService.resolve` (not `.notFound`)
 - [ ] `PersistenceController.inMemory()` uses `NSInMemoryStoreType`; `automaticallyMergesChangesFromParent` true for both shared and in-memory

@@ -415,7 +415,7 @@ private struct TaskRow: View {
             Image(systemName: imageName)
                 .foregroundStyle(imageColor)
             VStack(alignment: .leading) {
-                Text(taskLabel(for: task.eventType))
+                Text(task.eventType.localizedLabel)
                     .font(.subheadline)
                     .fontWeight(task.isOverdue ? .bold : .regular)
                     .strikethrough(task.status == .completed)
@@ -451,15 +451,6 @@ private struct TaskRow: View {
         switch task.status {
         case .completed: .green
         case .incomplete: task.isOverdue ? .red : .secondary
-        }
-    }
-
-    private func taskLabel(for type: CareEventType) -> String {
-        switch type {
-        case .watered: String(localized: "Watering")
-        case .fertilized: String(localized: "Fertilizing")
-        case .pruned: String(localized: "Pruning")
-        case .repotted: String(localized: "Repotting")
         }
     }
 }
