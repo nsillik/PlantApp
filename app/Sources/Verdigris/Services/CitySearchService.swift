@@ -70,7 +70,7 @@ final class MapKitCitySearchService: NSObject, @unchecked Sendable, CitySearchSe
                     return
                 }
                 guard let item = response?.mapItems.first else {
-                    cont.resume(throwing: CitySearchError.notFound)
+                    cont.resume(throwing: CitySearchError.resolutionFailed)
                     return
                 }
                 let placemark = item.placemark

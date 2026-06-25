@@ -159,13 +159,36 @@ These run alongside the phased work. They gate specific phases but don't block e
 
 ---
 
-### Phase 4 — Widget + Diagnosis Layer 1 *(post-MVP)*
+### Phase 4 — Code Health & Pattern Consolidation
+
+**Goal:** Eliminate duplication, standardize patterns, harden correctness, and reduce boilerplate across the entire codebase. No new user-facing features.
+
+**Depends on:** Phases 0–3.
+
+**Detailed plan:** [PHASE_4.md](PHASE_4.md)
+
+**Deliverables:**
+- `CareEventType` extension for localized label / SF Symbol / tint / schedule key path
+- `CareSchedule.recordingEvent(_:on:)` method with adherence-offset math
+- Atomic event+schedule persistence via `CareScheduleRepository.recordCareEvent`
+- `@DependencyClient` macro replacing all hand-rolled `Unimplemented*` stubs
+- `PersistenceService` fetch/upsert helpers collapsing repository boilerplate
+- `CitySearchSession` extraction (shared between `SettingsViewModel` + `LocationOnboardingViewModel`)
+- View decomposition (large `body` properties split into component vars)
+- ViewModel init pattern standardization, presentation `@State` cleanup, error reporting standardization
+- `ThumbnailRow` shared component, stable `CareTask.id`, persisted completion status
+- Dead code removal (`JournalEntry`, `EnvironmentalReading`, `StubServices.swift`, `CareTaskKey`, viewContext injection)
+- Bug fixes (in-memory store type, `hasCompletedOnboarding` observability, `detectPlant` isolation, localization, error-throwing)
+
+---
+
+### Phase 5 — Widget + Diagnosis Layer 1 *(post-MVP)*
 
 **Goal:** Home-screen widget showing due tasks; offline problem diagnosis with Vision symptom detection + hand-authored rule tree.
 
-**Depends on:** Phase 2 (scheduling), Workstream A (rule tree rides on catalog).
+**Depends on:** Phase 2 (scheduling), Phase 4 (code health ensures shared scheduling function is clean), Workstream A (rule tree rides on catalog).
 
-**Detailed plan:** `PHASE_4.md` (to be written when approaching this phase)
+**Detailed plan:** `PHASE_5.md` (to be written when approaching this phase)
 
 **Sketched deliverables:**
 - WidgetKit: single-plant widget + dashboard widget (App Group + shared scheduling function)
@@ -176,43 +199,43 @@ These run alongside the phased work. They gate specific phases but don't block e
 
 ---
 
-### Phase 5 — Diagnosis Layer 2 + Growth Tracking *(post-MVP)*
+### Phase 6 — Diagnosis Layer 2 + Growth Tracking *(post-MVP)*
 
 **Goal:** Optional AI enrichment for diagnosis; photo journal with health scoring and milestone detection.
 
-**Depends on:** Phase 4 (diagnosis plumbing) for AI half; growth tracking is independent.
+**Depends on:** Phase 5 (diagnosis plumbing) for AI half; growth tracking is independent.
 
-**Detailed plan:** `PHASE_5.md` (to be written when approaching this phase)
+**Detailed plan:** `PHASE_6.md` (to be written when approaching this phase)
 
 **Sketched deliverables:**
 - `AIDiagnosisProvider` protocol + `OpenAICompatibleProvider` + `MockProvider`
 - Prompt template (injects plant profile, context, Layer 1 diagnosis)
 - AI result display alongside Layer 1
-- Photo journal (`JournalEntry` model, timeline UI)
+- Photo journal (`JournalEntry` model, timeline UI) — re-introduced after Phase 4 removal
 - Health scoring (user-reported 1–5 + Vision-derived signal)
 - Milestone detection (new leaf, bloom, repotting anniversary, growth spurt)
 
 ---
 
-### Phase 6 — Environment & Long-Term Insights *(post-MVP)*
+### Phase 7 — Environment & Long-Term Insights *(post-MVP)*
 
 **Goal:** Weather-aware scheduling adjustments + seasonal nudges.
 
 **Depends on:** Phase 2 (scheduling consumes seasonal factors).
 
-**Detailed plan:** `PHASE_6.md` (to be written when approaching this phase)
+**Detailed plan:** `PHASE_7.md` (to be written when approaching this phase)
 
 **Sketched deliverables:**
 - Open-Meteo weather fetch via `URLSession` + `BGTaskScheduler`
-- `EnvironmentalReading` time series in Core Data
+- `EnvironmentalReading` time series in Core Data — re-introduced after Phase 4 removal
 - Seasonal playbook: `(latitude_band, month) → care adjustments`
 - "For You" dashboard card
 - Optional weekly summary notification
 
-## Known Gaps (tracked after Phase 2)
+## Known Gaps (tracked after Phase 4)
 
 - **Notification permission result is discarded**: `VerdigrisApp` requests permission on onboarding completion but ignores the result. If denied, future notification registrations silently fail. Should check `granted` and gate future registrations.
-- **Care sheet data not integrated into scheduling engine**: The `SchedulingEngine` uses `CareSheet` as a reserved parameter but doesn't consume it. The care sheet merge function (`generateCareSheet`) already computes placement-adjusted intervals, but these are text-oriented. A future phase should extract the numeric interval from the merge function and pass it to the scheduling engine, replacing the duplicate season/placement logic in `adjustedInterval` with the same computation used by `waterInstruction`.
+- **Care sheet data not integrated into scheduling engine**: The `CareSheet` parameter has been removed from `SchedulingEngine` (Phase 4). The care sheet merge function (`generateCareSheet`) already computes placement-adjusted intervals, but these are text-oriented. A future phase should extract the numeric interval from the merge function and pass it to the scheduling engine, replacing the duplicate season/placement logic in `adjustedInterval` with the same computation used by `waterInstruction`.
 
 ## Cross-Cutting (every phase)
 

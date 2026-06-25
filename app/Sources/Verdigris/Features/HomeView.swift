@@ -147,7 +147,6 @@ final class HomeViewModel {
             allTasks += engine.nextDueDates(
                 schedule: schedule,
                 species: species,
-                careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
                 season: season,
                 plantName: plant.name,
                 now: Date()
@@ -183,7 +182,6 @@ final class HomeViewModel {
             allTasks += engine.nextDueDates(
                 schedule: schedule,
                 species: species,
-                careSheet: CareSheet(water: "", light: "", soil: "", humidity: "", toxicity: "", commonProblems: ""),
                 season: season,
                 plantName: plant.name,
                 now: Date()
